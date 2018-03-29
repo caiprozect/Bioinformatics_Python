@@ -54,8 +54,8 @@ def sum_dicts(dictA, dictB):
 	return summedDict
 
 def main():
-	sFName = "./chroms/chr1.fa"
-	sSFile = "Seq.fa"
+	sFName = "../data/chroms/chr1.fa"
+	sSFile = "../data/Seq.fa"
 	make_seq(sFName, sSFile)
 
 	nPolymerLen = 1 #Counting monomers for this HW
