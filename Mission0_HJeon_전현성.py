@@ -1,6 +1,7 @@
 import multiprocessing as mp #Python does not support proper threading, This is expensive to create than a thread
 from collections import defaultdict #Auto initialization
 from functools import reduce
+from time import time
 import os, re, psutil
 
 def make_seq(infile, outfile): #Sanity check and Make one line seq file
@@ -76,8 +77,13 @@ def main():
 	mpPool.close()
 
 	print("\t=================================================")
-	assert(psutil.Process().open_files()==[]), "Bad: There are some open file handles!!!"
-	print("\tGood: All the file handles are properly closed!!")
+	#print(psutil.Process().open_files())
+	#assert(psutil.Process().open_files()==[]), "Bad: There are some open file handles!!!"
+	#print("\tGood: All the file handles are properly closed!!")
 	print("\t---The End---")
 
-main()
+if __name__ == "__main__":
+	rtime = time()
+	main()
+	rtime = time() - rtime
+	print("Took {} seconds to run".format(rtime))
