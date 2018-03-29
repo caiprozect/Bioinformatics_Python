@@ -14,7 +14,6 @@ def make_seq(infile, outfile): #Sanity check and Make one line seq file
 	assert(inFileNumbLine == len(filteredLines)), "File contains unknown nucleotide character"
 	outFileH = open(outfile, 'w')
 	outFileH.write("".join(filteredLines))
-	#EndFor
 	print("\t1. File passed sanity check")
 	print("\t2. Seq file has been created")
 	print("\t=================================================")
@@ -29,12 +28,13 @@ def chunk_process(file, start, size, polyLen):
 			partFreqDict[sPartText[i:i+polyLen]] += 1
 	return partFreqDict
 
-def make_chunk(file, size = 1024*1024*64):
+def make_chunk(file, polyLen, size = 1024*1024*64):
 	fileEnd = os.path.getsize(file)
 	inFileH = open(file, 'rb')
 	chunkEnd = inFileH.tell()
 	while True:
-		chunkStart = chunkEnd
+		chunkStart = (chunkEnd - polyLen + 1) if (chunkEnd - polyLen + 1 >= 0) else chunkEnd
+		inFileH.seek(chunkStart)
 		inFileH.seek(size, 1)
 		chunkEnd = inFileH.tell()
 		yield chunkStart, chunkEnd - chunkStart
@@ -62,7 +62,7 @@ def main():
 	mpPool = mp.Pool() #Default option uses maximum number of cpu cores
 	lJobs = []
 
-	for ptrChunkStart, ptrChunkSize in make_chunk(sSFile):
+	for ptrChunkStart, ptrChunkSize in make_chunk(sSFile, nPolymerLen):
 		lJobs.append( mpPool.apply_async(chunk_process, (sSFile, ptrChunkStart, ptrChunkSize, nPolymerLen)) )
 
 	wFreq = reduce((lambda x,y: sum_dicts(x,y)), [job.get() for job in lJobs])
