@@ -12,6 +12,7 @@ def numbToPtn(numb, polyLen):
 	for i in range(polyLen):
 		nQ, nR = divmod(nQ, len(lNucls))
 		sPtn = lNucls[nR] + sPtn
+	#Endfor
 	return sPtn
 
 def make_seq(infile): #Sanity check is done here
@@ -49,14 +50,12 @@ def chunk_process(file, polyLen):
 	#Endfor
 	for nucl in lNucls:
 		monoFreqs[nucl] = tempMonoFreqs[nucl]
+	#Endfor
 	for numb in range(4**polyLen):
 		sPtn = numbToPtn(numb, polyLen)
 		polyFreqs[sPtn] = tempPolyFreqs[sPtn]
-		prob = 1
-		for letter in sPtn:
-			prob *= monoFreqs[letter]
-		expFreqs[sPtn] = prob * (len(sSeqText)-polyLen) 
-	return [monoFreqs, polyFreqs, expFreqs]
+	#Endfor
+	return [monoFreqs, polyFreqs]
 
 def sum_dicts(dictA, dictB):
 	summedDict = defaultdict(int)
@@ -99,26 +98,43 @@ def freqForEach(filelist, polyLen):
 	return lWFreqs
 
 def main():
+	sOutFile = "Mission1.txt"
 	polyLen = 2 #Dealing with Dimers
-	lChromNumb = [str(n) for n in range(1,23)] + ["X", "Y"]
-	lInFiles = ["chr"+chromNumb+".fa" for chromNumb in lChromNumb]
-	lInFilePaths = ["../data/chroms/"+inFileName for inFileName in lInFiles]
-	lWFreqs = freqForEach(lInFilePaths, polyLen)
-	monoFreq = lWFreqs[0]
-	diFreq = lWFreqs[1]
-	expFreq = lWFreqs[2]
-	lMonomers = monoFreq.keys()
-	lDimers = diFreq.keys()
-	nWNumbMono = sum(monoFreq.values())
-	nWNumbDi = sum(diFreq.values())
-	nWexp = sum(expFreq.values())
+	dictChromCat = {'hg38': ([str(i) for i in range(1,23)]+['X','Y']), 'galGal3': ([str(i) for i in range(1,29)]+['32','W','Z']),
+					'dm3': ['2R', '2L', '3R', '3L', '4', 'X'], 'ce10': ['I', 'II', 'III', 'IV', 'V', 'X']}
 
-	print("\tMonomer stats")
-	for sMonomer in lMonomers:
-		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f}".format(sMonomer, monoFreq[sMonomer], float(monoFreq[sMonomer])/nWNumbMono))
-	print("\n\tDimer stats")
-	for sDimer in lDimers:
-		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f} \tFrequency of exp {0}: {3:f}".format(sDimer, diFreq[sDimer], float(diFreq[sDimer])/nWNumbDi, expFreq[sDimer]/nWexp))
+	outFileH = open(sOutFile, 'w')
+	for chromVer, chromNumb in dictChromCat.items():
+		outFileH.write("{} Statistics\n".format(chromVer))
+		lChromNumb = chromNumb
+		lInFiles = ["chr"+chromNumb+".fa" for chromNumb in lChromNumb]
+		lInFilePaths = ["../data/{}.chroms/".format(chromVer)+inFileName for inFileName in lInFiles]
+		lWFreqs = freqForEach(lInFilePaths, polyLen)
+		monoFreq = lWFreqs[0]
+		diFreq = lWFreqs[1]
+		lMonomers = monoFreq.keys()
+		lDimers = diFreq.keys()
+		nWNumbMono = sum(monoFreq.values())
+		nWNumbDi = sum(diFreq.values())
+		
+		expFreq = {}
+		for key in diFreq.keys():
+			expFreq[key] = 1
+			for letter in key:
+				expFreq[key] *= float(monoFreq[letter])/nWNumbMono
+		#Endfor
+
+		outFileH.write("\tMonomer stats\n")
+		for sMonomer in lMonomers:
+			outFileH.write("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f}\n".format(sMonomer, monoFreq[sMonomer], float(monoFreq[sMonomer])/nWNumbMono))
+		#Endfor
+		outFileH.write("\n\tDimer stats\n")
+		for sDimer in lDimers:
+			outFileH.write("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f} \tFrequency of exp {0}: {3:f}\n".format(sDimer, diFreq[sDimer], float(diFreq[sDimer])/nWNumbDi, expFreq[sDimer]))
+		#Endfor
+		outFileH.write("\n\n")
+	#Endfor
+	outFileH.close()
 
 if __name__ == "__main__":
 	rtime = time()
