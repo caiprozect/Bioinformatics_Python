@@ -4,7 +4,17 @@ from functools import reduce
 from time import time
 import os, re, psutil
 
-def make_seq(infile, outfile): #Sanity check and Make one line seq file
+def numbToPtn(numb, polyLen):
+	lNucls = ["A", "C", "G", "T"]
+	nQ = numb
+	nR = 0
+	sPtn = ""
+	for i in range(polyLen):
+		nQ, nR = divmod(nQ, len(lNucls))
+		sPtn = lNucls[nR] + sPtn
+	return sPtn
+
+def make_seq(infile): #Sanity check is done here
 	inFileH = open(infile, 'r')
 	inFileH.readline() #Skip the first line
 	inFileLines =  inFileH.read().upper().splitlines()
@@ -12,46 +22,47 @@ def make_seq(infile, outfile): #Sanity check and Make one line seq file
 	inFileNumbLine = len(inFileLines)
 	filteredLines = [inLine.strip() for inLine in inFileLines if (bool(re.match('^[ACGTN]+$', inLine)))]
 	assert(inFileNumbLine == len(filteredLines)), "\"{}\" file contains unknown nucleotide character".format(infile)
-	outFileH = open(outfile, 'w')
-	outFileH.write("".join(filteredLines))
 	print("\t1. \"{}\" file passed sanity check".format(infile))
-	print("\t2. Seq file \"{}\" has been created".format(outfile))
+	print("\t2. Seq has been created")
 	print("\t=================================================")
+	return("".join(filteredLines))
 
-def chunk_process(file, start, size, polyLens):
-	lFreqs = []
-	for polyLen in polyLens:
-		partFreqDict = defaultdict(int)
-		with open(file, "rb") as inFileH:
-			inFileH.seek(start)
-			sPartText = inFileH.read(size).upper()
-			nPartTextLen = len(sPartText)
-			for i in range(nPartTextLen-polyLen+1):
-				partFreqDict[sPartText[i:i+polyLen]] += 1
-		lFreqs.append(partFreqDict)
+def chunk_process(file, polyLen):
+	lNucls = ["A", "C", "G", "T"]
+	sSeqText = make_seq(file)
+	tempMonoFreqs = defaultdict(int)
+	tempPolyFreqs = defaultdict(int)
+	monoFreqs = {}
+	polyFreqs = {}
+	expFreqs = {}
+	windowSlideEnd = len(sSeqText) - polyLen + 1 
+	for i in range(windowSlideEnd):
+		if(i == windowSlideEnd):
+			sPtn = sSeqText[i:i+polyLen]
+			for letter in sPtn:
+				tempMonoFreqs[letter] += 1
+			tempPolyFreqs[sPtn] += 1
+		else:
+			sPtn = sSeqText[i:i+polyLen]
+			tempMonoFreqs[sPtn[0]] += 1
+			tempPolyFreqs[sPtn] += 1
 	#Endfor
-	return lFreqs
-
-def make_chunk(file, size = 1024*1024*64):
-	fileEnd = os.path.getsize(file)
-	inFileH = open(file, 'rb')
-	chunkEnd = inFileH.tell()
-	while True:
-		chunkStart = chunkEnd
-		inFileH.seek(size, 1)
-		chunkEnd = inFileH.tell()
-		yield chunkStart, chunkEnd - chunkStart
-		if chunkEnd > fileEnd:
-			inFileH.close()
-			break
-	#EndWhile
+	for nucl in lNucls:
+		monoFreqs[nucl] = tempMonoFreqs[nucl]
+	for numb in range(4**polyLen):
+		sPtn = numbToPtn(numb, polyLen)
+		polyFreqs[sPtn] = tempPolyFreqs[sPtn]
+		prob = 1
+		for letter in sPtn:
+			prob *= monoFreqs[letter]
+		expFreqs[sPtn] = prob * (len(sSeqText)-polyLen) 
+	return [monoFreqs, polyFreqs, expFreqs]
 
 def sum_dicts(dictA, dictB):
 	summedDict = defaultdict(int)
 	unionKeys = set(dictA.keys()) | set(dictB.keys())
 	for key in unionKeys:
-		if 'N'.encode('utf-8') not in key:
-			summedDict[key] = dictA[key] + dictB[key]
+		summedDict[key] = dictA[key] + dictB[key]
 	#EndFor
 	return summedDict
 
@@ -63,18 +74,12 @@ def sum_dict_list(dictListA, dictListB):
 		summedList.append(sum_dicts(dictListA[i], dictListB[i]))
 	return summedList
 
-def freqForEach(file, polyLens):
-	sFName = file
-	sSFile = "../data/Seq.fa"
-	make_seq(sFName, sSFile)
-
-	nPolymerLen = polyLens #Counting monomers for this HW
-
+def freqForEach(filelist, polyLen):
 	mpPool = mp.Pool() #Default option uses maximum number of cpu cores
 	lJobs = []
 
-	for ptrChunkStart, ptrChunkSize in make_chunk(sSFile):
-		lJobs.append( mpPool.apply_async(chunk_process, (sSFile, ptrChunkStart, ptrChunkSize, nPolymerLen)) )
+	for file in filelist:
+		lJobs.append( mpPool.apply_async(chunk_process, (file, polyLen)) )
 
 	lWFreqs = reduce((lambda x,y: sum_dict_list(x,y)), [job.get() for job in lJobs])
 
@@ -89,29 +94,31 @@ def freqForEach(file, polyLens):
 	#print("\tGood: All the file handles are properly closed!!")
 	#print("\t---The End---")
 
-	print("Frequency table for {} is generated\n\n".format(file))
+	print("Frequency table is generated\n\n")
 
 	return lWFreqs
 
 def main():
-	polyLens = [1, 2]
+	polyLen = 2 #Dealing with Dimers
 	lChromNumb = [str(n) for n in range(1,23)] + ["X", "Y"]
 	lInFiles = ["chr"+chromNumb+".fa" for chromNumb in lChromNumb]
 	lInFilePaths = ["../data/chroms/"+inFileName for inFileName in lInFiles]
-	lWFreqs = reduce((lambda x,y: sum_dict_list(x,y)), [freqForEach(each, polyLens) for each in lInFilePaths])
+	lWFreqs = freqForEach(lInFilePaths, polyLen)
 	monoFreq = lWFreqs[0]
 	diFreq = lWFreqs[1]
+	expFreq = lWFreqs[2]
 	lMonomers = monoFreq.keys()
 	lDimers = diFreq.keys()
 	nWNumbMono = sum(monoFreq.values())
 	nWNumbDi = sum(diFreq.values())
+	nWexp = sum(expFreq.values())
 
-	print("\tMonomer stats\n")
+	print("\tMonomer stats")
 	for sMonomer in lMonomers:
-		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f}".format(sMonomer.decode('utf-8'), monoFreq[sMonomer], float(monoFreq[sMonomer])/nWNumbMono))
-	print("\tDimer stats\n")
+		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f}".format(sMonomer, monoFreq[sMonomer], float(monoFreq[sMonomer])/nWNumbMono))
+	print("\n\tDimer stats")
 	for sDimer in lDimers:
-		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f}".format(sDimer.decode('utf-8'), diFreq[sDimer], float(diFreq[sDimer])/nWNumbDi))
+		print("\tNumber of {0}: {1:d} \tFrequency of {0}: {2:f} \tFrequency of exp {0}: {3:f}".format(sDimer, diFreq[sDimer], float(diFreq[sDimer])/nWNumbDi, expFreq[sDimer]/nWexp))
 
 if __name__ == "__main__":
 	rtime = time()
