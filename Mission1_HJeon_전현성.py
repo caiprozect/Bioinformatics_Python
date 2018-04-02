@@ -38,7 +38,7 @@ def chunk_process(file, polyLen):
 	expFreqs = {}
 	windowSlideEnd = len(sSeqText) - polyLen + 1 
 	for i in range(windowSlideEnd):
-		if(i == windowSlideEnd):
+		if(i == (windowSlideEnd - 1)):
 			sPtn = sSeqText[i:i+polyLen]
 			for letter in sPtn:
 				tempMonoFreqs[letter] += 1
