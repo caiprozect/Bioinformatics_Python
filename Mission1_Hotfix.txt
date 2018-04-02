@@ -1,0 +1,104 @@
+hg38 Statistics
+	Monomer stats
+	Number of G: 601512956 	Frequency of G: 0.204761
+	Number of A: 867148869 	Frequency of A: 0.295186
+	Number of C: 599038716 	Frequency of C: 0.203918
+	Number of T: 869938572 	Frequency of T: 0.296135
+
+	Dimer stats
+	Number of GA: 175846885 	Frequency of GA: 0.059860 	Frequency of exp GA: 0.060442
+	Number of GT: 148502038 	Frequency of GT: 0.050552 	Frequency of exp GT: 0.060637
+	Number of GG: 152431733 	Frequency of GG: 0.051889 	Frequency of exp GG: 0.041927
+	Number of GC: 124732133 	Frequency of GC: 0.042460 	Frequency of exp GC: 0.041754
+	Number of AC: 148148836 	Frequency of AC: 0.050431 	Frequency of exp AC: 0.060194
+	Number of AT: 226224555 	Frequency of AT: 0.077009 	Frequency of exp AT: 0.087415
+	Number of CG: 29401360 	Frequency of CG: 0.010009 	Frequency of exp CG: 0.041754
+	Number of TG: 213928019 	Frequency of TG: 0.072823 	Frequency of exp TG: 0.060637
+	Number of CA: 212879215 	Frequency of CA: 0.072466 	Frequency of exp CA: 0.060194
+	Number of TA: 191398875 	Frequency of TA: 0.065154 	Frequency of exp TA: 0.087415
+	Number of TT: 289689050 	Frequency of TT: 0.098613 	Frequency of exp TT: 0.087696
+	Number of CT: 205522704 	Frequency of CT: 0.069962 	Frequency of exp CT: 0.060387
+	Number of AG: 205751611 	Frequency of AG: 0.070040 	Frequency of exp AG: 0.060442
+	Number of TC: 174922426 	Frequency of TC: 0.059545 	Frequency of exp TC: 0.060387
+	Number of CC: 151235161 	Frequency of CC: 0.051482 	Frequency of exp CC: 0.041583
+	Number of AA: 287023535 	Frequency of AA: 0.097706 	Frequency of exp AA: 0.087135
+
+
+galGal3 Statistics
+	Monomer stats
+	Number of G: 203326732 	Frequency of G: 0.206453
+	Number of A: 288965501 	Frequency of A: 0.293409
+	Number of C: 203271210 	Frequency of C: 0.206397
+	Number of T: 289292764 	Frequency of T: 0.293741
+
+	Dimer stats
+	Number of GA: 58551438 	Frequency of GA: 0.059455 	Frequency of exp GA: 0.060575
+	Number of GT: 51419435 	Frequency of GT: 0.052213 	Frequency of exp GT: 0.060644
+	Number of GG: 45868719 	Frequency of GG: 0.046577 	Frequency of exp GG: 0.042623
+	Number of GC: 47474582 	Frequency of GC: 0.048207 	Frequency of exp GC: 0.042611
+	Number of AC: 51332776 	Frequency of AC: 0.052125 	Frequency of exp AC: 0.060559
+	Number of AT: 71291811 	Frequency of AT: 0.072392 	Frequency of exp AT: 0.086186
+	Number of CG: 10279997 	Frequency of CG: 0.010439 	Frequency of exp CG: 0.042611
+	Number of TG: 75695522 	Frequency of TG: 0.076864 	Frequency of exp TG: 0.060644
+	Number of CA: 75580370 	Frequency of CA: 0.076747 	Frequency of exp CA: 0.060559
+	Number of TA: 59961541 	Frequency of TA: 0.060887 	Frequency of exp TA: 0.086186
+	Number of TT: 95047944 	Frequency of TT: 0.096515 	Frequency of exp TT: 0.086284
+	Number of CT: 71518210 	Frequency of CT: 0.072622 	Frequency of exp CT: 0.060627
+	Number of AG: 71468035 	Frequency of AG: 0.072571 	Frequency of exp AG: 0.060575
+	Number of TC: 58573434 	Frequency of TC: 0.059478 	Frequency of exp TC: 0.060627
+	Number of CC: 45878037 	Frequency of CC: 0.046586 	Frequency of exp CC: 0.042600
+	Number of AA: 94857467 	Frequency of AA: 0.096322 	Frequency of exp AA: 0.086089
+
+
+dm3 Statistics
+	Monomer stats
+	Number of G: 25502120 	Frequency of G: 0.212004
+	Number of A: 34639049 	Frequency of A: 0.287961
+	Number of C: 25517616 	Frequency of C: 0.212132
+	Number of T: 34632155 	Frequency of T: 0.287903
+
+	Dimer stats
+	Number of GA: 6659530 	Frequency of GA: 0.055362 	Frequency of exp GA: 0.061049
+	Number of GT: 6271008 	Frequency of GT: 0.052132 	Frequency of exp GT: 0.061037
+	Number of GG: 5662294 	Frequency of GG: 0.047072 	Frequency of exp GG: 0.044946
+	Number of GC: 6909286 	Frequency of GC: 0.057438 	Frequency of exp GC: 0.044973
+	Number of AC: 6273787 	Frequency of AC: 0.052155 	Frequency of exp AC: 0.061086
+	Number of AT: 9702162 	Frequency of AT: 0.080656 	Frequency of exp AT: 0.082905
+	Number of CG: 5028688 	Frequency of CG: 0.041804 	Frequency of exp CG: 0.044973
+	Number of TG: 8288792 	Frequency of TG: 0.068906 	Frequency of exp TG: 0.061037
+	Number of CA: 8300572 	Frequency of CA: 0.069004 	Frequency of exp CA: 0.061086
+	Number of TA: 7538190 	Frequency of TA: 0.062666 	Frequency of exp TA: 0.082905
+	Number of TT: 12137280 	Frequency of TT: 0.100899 	Frequency of exp TT: 0.082888
+	Number of CT: 6521703 	Frequency of CT: 0.054216 	Frequency of exp CT: 0.061074
+	Number of AG: 6522339 	Frequency of AG: 0.054221 	Frequency of exp AG: 0.061049
+	Number of TC: 6667891 	Frequency of TC: 0.055431 	Frequency of exp TC: 0.061074
+	Number of CC: 5666652 	Frequency of CC: 0.047108 	Frequency of exp CC: 0.045000
+	Number of AA: 12140758 	Frequency of AA: 0.100928 	Frequency of exp AA: 0.082921
+
+
+ce10 Statistics
+	Monomer stats
+	Number of G: 17756982 	Frequency of G: 0.177088
+	Number of A: 32367417 	Frequency of A: 0.322795
+	Number of C: 17780786 	Frequency of C: 0.177325
+	Number of T: 32367085 	Frequency of T: 0.322792
+
+	Dimer stats
+	Number of GA: 6231238 	Frequency of GA: 0.062143 	Frequency of exp GA: 0.057163
+	Number of GT: 4840888 	Frequency of GT: 0.048277 	Frequency of exp GT: 0.057162
+	Number of GG: 3344612 	Frequency of GG: 0.033355 	Frequency of exp GG: 0.031360
+	Number of GC: 3340244 	Frequency of GC: 0.033312 	Frequency of exp GC: 0.031402
+	Number of AC: 4846482 	Frequency of AC: 0.048333 	Frequency of exp AC: 0.057240
+	Number of AT: 8874516 	Frequency of AT: 0.088504 	Frequency of exp AT: 0.104196
+	Number of CG: 3131409 	Frequency of CG: 0.031229 	Frequency of exp CG: 0.031402
+	Number of TG: 6205631 	Frequency of TG: 0.061888 	Frequency of exp TG: 0.057162
+	Number of CA: 6204317 	Frequency of CA: 0.061875 	Frequency of exp CA: 0.057240
+	Number of TA: 6360775 	Frequency of TA: 0.063435 	Frequency of exp TA: 0.104196
+	Number of TT: 13572218 	Frequency of TT: 0.135354 	Frequency of exp TT: 0.104195
+	Number of CT: 5079464 	Frequency of CT: 0.050657 	Frequency of exp CT: 0.057239
+	Number of AG: 5075331 	Frequency of AG: 0.050615 	Frequency of exp AG: 0.057163
+	Number of TC: 6228461 	Frequency of TC: 0.062115 	Frequency of exp TC: 0.057239
+	Number of CC: 3365596 	Frequency of CC: 0.033565 	Frequency of exp CC: 0.031444
+	Number of AA: 13571088 	Frequency of AA: 0.135342 	Frequency of exp AA: 0.104197
+
+

@@ -16,7 +16,7 @@ def numbToPtn(numb, polyLen):
 	return sPtn
 
 def make_seq(infile): #Sanity check is done here
-	inFileH = open(infile, 'r')
+	inFileH = open(infile, 'rb')
 	inFileH.readline() #Skip the first line
 	inFileLines =  inFileH.read().upper().splitlines()
 	inFileH.close()
@@ -24,10 +24,9 @@ def make_seq(infile): #Sanity check is done here
 	#inFileNumbLine = len(inFileLines)
 	#filteredLines = [inLine.strip() for inLine in inFileLines if (bool(re.match('^[ACGTN]+$', inLine)))]
 	#assert(inFileNumbLine == len(filteredLines)), "\"{}\" file contains unknown nucleotide character".format(infile)
-	print("\t1. \"{}\" file passed sanity check".format(infile))
-	print("\t2. Seq has been created")
+	print("\t{} Seq has been created".format(infile))
 	print("\t=================================================")
-	return("".join(filteredLines))
+	return (("".encode('utf-8')).join(inFileLines)).decode('utf-8')
 
 def chunk_process(file, polyLen):
 	lNucls = ["A", "C", "G", "T"]
@@ -51,7 +50,7 @@ def chunk_process(file, polyLen):
 	#Endfor
 
 	#Let's do sanity check here
-	assert(set(tempMonoFreqs.keys()) < set(["A", "C", "G", "T", "N"])), "File has unknown nucleotide character"
+	assert(set(tempMonoFreqs.keys()).issubset(set(["A", "C", "G", "T", "N"]))), "{} file has unknown nucleotide character {}".format(file, tempMonoFreqs.keys())
 
 	for nucl in lNucls:
 		monoFreqs[nucl] = tempMonoFreqs[nucl]
