@@ -1,6 +1,6 @@
 hg38 chromosomes statistics
 K-mer                     Counts     Frequencies    Expectations
-A                      867149071         0.29519
+A                      867148869         0.29519
 C                      599038716         0.20392
 G                      601512956         0.20476
 T                      869938572         0.29614
@@ -23,8 +23,8 @@ TT                     289689050         0.09861         0.08770
 
 galGal3 chromosomes statistics
 K-mer                     Counts     Frequencies    Expectations
-A                      288979841         0.29342
-C                      203271213         0.20639
+A                      288965511         0.29341
+C                      203271213         0.20640
 G                      203326743         0.20645
 T                      289292771         0.29374
 AA                      94857467         0.09632         0.08609
@@ -46,7 +46,7 @@ TT                      95047944         0.09652         0.08628
 
 dm3 chromosomes statistics
 K-mer                     Counts     Frequencies    Expectations
-A                       34639054         0.28796
+A                       34639052         0.28796
 C                       25517618         0.21213
 G                       25502121         0.21200
 T                       34632155         0.28790
@@ -69,7 +69,7 @@ TT                      12137280         0.10090         0.08289
 
 ce10 chromosomes statistics
 K-mer                     Counts     Frequencies    Expectations
-A                       32367419         0.32280
+A                       32367418         0.32280
 C                       17780787         0.17733
 G                       17756985         0.17709
 T                       32367086         0.32279

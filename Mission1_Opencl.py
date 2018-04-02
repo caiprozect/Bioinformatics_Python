@@ -58,9 +58,9 @@ def kMerCount(file, nK):
 					atomic_inc(&numb_seq[5]);
 				} else {
 				if(letter == 78) {
-					numb_seq[idx+i] = (-1) * numbKmer;
+					numb_seq[idx+i] = (-1) * (numbKmer + 2 + 4);
 				} else {
-					numb_seq[idx+i] = (-1) * numbKmer - 1000000;
+					numb_seq[idx+i] = (-1) * (numbKmer + 2 + 4) - 1000000;
 				}
 				}
 				}
