@@ -20,9 +20,10 @@ def make_seq(infile): #Sanity check is done here
 	inFileH.readline() #Skip the first line
 	inFileLines =  inFileH.read().upper().splitlines()
 	inFileH.close()
-	inFileNumbLine = len(inFileLines)
-	filteredLines = [inLine.strip() for inLine in inFileLines if (bool(re.match('^[ACGTN]+$', inLine)))]
-	assert(inFileNumbLine == len(filteredLines)), "\"{}\" file contains unknown nucleotide character".format(infile)
+	#Let's do sanity check in other lines since this takes up too much time
+	#inFileNumbLine = len(inFileLines)
+	#filteredLines = [inLine.strip() for inLine in inFileLines if (bool(re.match('^[ACGTN]+$', inLine)))]
+	#assert(inFileNumbLine == len(filteredLines)), "\"{}\" file contains unknown nucleotide character".format(infile)
 	print("\t1. \"{}\" file passed sanity check".format(infile))
 	print("\t2. Seq has been created")
 	print("\t=================================================")
@@ -48,6 +49,10 @@ def chunk_process(file, polyLen):
 			tempMonoFreqs[sPtn[0]] += 1
 			tempPolyFreqs[sPtn] += 1
 	#Endfor
+
+	#Let's do sanity check here
+	assert(set(tempMonoFreqs.keys()) < set(["A", "C", "G", "T", "N"])), "File has unknown nucleotide character"
+
 	for nucl in lNucls:
 		monoFreqs[nucl] = tempMonoFreqs[nucl]
 	#Endfor
@@ -98,7 +103,7 @@ def freqForEach(filelist, polyLen):
 	return lWFreqs
 
 def main():
-	sOutFile = "Mission1.txt"
+	sOutFile = "Mission1_Hotfix.txt"
 	polyLen = 2 #Dealing with Dimers
 	dictChromCat = {'hg38': ([str(i) for i in range(1,23)]+['X','Y']), 'galGal3': ([str(i) for i in range(1,29)]+['32','W','Z']),
 					'dm3': ['2R', '2L', '3R', '3L', '4', 'X'], 'ce10': ['I', 'II', 'III', 'IV', 'V', 'X']}

@@ -53,7 +53,7 @@ def sum_dicts(dictA, dictB):
 	return summedDict
 
 def main():
-	sFName = "../data/chroms/chr1.fa"
+	sFName = "../data/hg38.chroms/chr1.fa"
 	sSFile = "../data/Seq.fa"
 	make_seq(sFName, sSFile)
 
