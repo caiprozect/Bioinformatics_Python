@@ -1,0 +1,19 @@
+dm3 chromosomes statistics
+K-mer                     Counts     Frequencies    Expectations
+AA                      12140758
+AC                       6273787
+AG                       6522339
+AT                       9702162
+CA                       8300572
+CC                       5666652
+CG                       5028688
+CT                       6521703
+GA                       6659530
+GC                       6909286
+GG                       5662294
+GT                       6271008
+TA                       7538190
+TC                       6667891
+TG                       8288792
+TT                      12137280
+
