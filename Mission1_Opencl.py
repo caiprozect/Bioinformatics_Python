@@ -58,9 +58,9 @@ def kMerCount(file, nK):
 					atomic_inc(&numb_seq[5]);
 				} else {
 				if(letter == 78) {
-					numb_seq[idx+i] = (-1) * (numbKmer + 2 + 4);
+					numb_seq[idx+i] = -1;
 				} else {
-					numb_seq[idx+i] = (-1) * (numbKmer + 2 + 4) - 1000000;
+					numb_seq[idx+i] = -2;
 				}
 				}
 				}
@@ -81,27 +81,32 @@ def kMerCount(file, nK):
 		int i, numb;
 		int k, p, loc_idx, ptn_idx;
 		int dgt;
+		int kmin;
 		for(i=0; i < M; i++) {
 			ptn_idx = 0;
 			loc_idx = idx + i;
+			kmin = 0;
 			if(loc_idx <= (N*M + numbKmer + 2 + 4 - nK)) {
 				for(k=0; k < nK; k++) {
-					dgt = 1;
 					numb = numb_seq[loc_idx + k];
-					for(p=nK-1-k; p > 0 ; p--) {
-						dgt *= 4;
+					switch(numb) {
+						case (-1):
+							atomic_inc(&numb_seq[1]);
+							break;
+						case (-2):
+							atomic_inc(&numb_seq[0]);
+							break;
+						default:
+							dgt = (int)(pow(4, (float)(nK-1-k)));
+							ptn_idx += dgt * numb;
+							break;
 					}
-					ptn_idx += dgt * numb;
+					if(numb < kmin) {
+						kmin = numb;
+					}
 				}
-				ptn_idx += 2 + 4;
-				if(ptn_idx >= 0) {
-					atomic_inc(&numb_seq[ptn_idx]);
-				} else {
-				if(ptn_idx < -1000000) {
-					atomic_inc(&numb_seq[0]);
-				} else{
-					atomic_inc(&numb_seq[1]);
-				}
+				if(kmin >= 0) {
+					atomic_inc(&numb_seq[ptn_idx+2+4]);
 				}
 			}
 		}
@@ -193,7 +198,7 @@ def main():
 	dictChromCat = {'hg38': ([str(i) for i in range(1,23)]+['X','Y']), 'galGal3': ([str(i) for i in range(1,29)]+['32','W','Z']),
 					'dm3': ['2R', '2L', '3R', '3L', '4', 'X'], 'ce10': ['I', 'II', 'III', 'IV', 'V', 'X']}
 	K = 2
-	outFile = "Mission1_Opencl.txt"
+	outFile = "Mission1_Opencl1.txt"
 	processOrganChromDict(dictChromCat, K, outFile)
 
 if __name__=="__main__":
