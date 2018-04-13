@@ -43,6 +43,7 @@ def parseWholeRefFlat(sFileName):
 		cRefSeq = RefSeq()
 		cRefSeq.parse_refflat_line(sLine)
 		wholeCRefSeq.append(cRefSeq)
+	fileH.close()
 	return wholeCRefSeq
 
 def parseNM(listCRefSeq):
@@ -57,12 +58,16 @@ def parseNM(listCRefSeq):
 		if (sHead == "NM") and (sChromID in chromList):
 			filteredList.append(cRefSeq)
 		else:
-			excludedRefID.add(sRefID)
-			excludedChromID.add(sChromID)
-	print("not NM_")
-	print(excludedRefID)
-	print("\n\nnot Chrom Num")
-	print(excludedChromID)
+			if (sHead != "NM"):
+				excludedRefID.add(sRefID)
+			else:	
+				excludedChromID.add(sChromID)
+	outH = open("Excluded", 'w')
+	print("not NM_", file=outH)
+	[print(sRefID, file=outH) for sRefID in excludedRefID]
+	print("\n\nnot Chrom Num", file=outH)
+	[print(sChromID, file=outH) for sChromID in excludedChromID]
+	outH.close()
 	return filteredList
 
 def parseUniqueNM(listCRefSeq):
@@ -74,8 +79,9 @@ def parseUniqueNM(listCRefSeq):
 	uniqueList = [cRefSeq for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) == 1]
 	overlapList = set([cRefSeq.getRefID() for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) != 1])
 
-	print("\n\nnot Unique")
-	print(overlapList)
+	outH = open("NotUnique", 'w')
+	print("not Unique", file=outH)
+	[print(sRefID, file=outH) for sRefID in overlapList]
 
 	return uniqueList
 
