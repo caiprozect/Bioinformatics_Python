@@ -55,14 +55,18 @@ def parseNM(listCRefSeq):
 			filteredList.append(cRefSeq)
 	return filteredList
 
-def parseUniqueNM(listCRefSeq):
+def parseUniqueNM(sortedCRefSeqs):
 	uniqueList = []
-	setSeen = set([])
-	for cRefSeq in listcRefSeq:
-		sRefID = cRefSeq.getRefID()
-		if (sRefID not in setSeen):
-			uniqueList.append(cRefSeq)
-			setSeen.add(sRefID)
+	nSize = len(sortedCRefSeqs)
+	nIdx = 0
+	while nIdx < nSize:
+		sCurr = sortedCRefSeqs[nIdx].getRefID()
+		sNext = sortedCRefSeqs[nIdx+1].getRefID()
+		if (sCurr == sNext):
+			nIdx += 2
+			while sortedCRefSeqs[nIdx].getRefID() == sCurr:
+				nIdx += 1
+		
 
 def sortByRefSeqID(listCRefSeq):
 	listCRefSeq.sort(key = (lambda cRefSeq: int(cRefSeq.getRefID().split("_")[-1])))
@@ -73,9 +77,9 @@ def main(sFileName):
 	print("Answer 1: {}".format(len(listCRefSeq)))
 	listCRefSeq = parseNM(listCRefSeq)
 	print("Answer 2: {}".format(len(listCRefSeq)))
+	listCRefSeq = sortByRefSeqID(listCRefSeq)
 	listCRefSeq = parseUniqueNM(listCRefSeq)
 	print("Answer 3: {}".format(len(listCRefSeq)))
-	listCRefSeq = sortByRefSeqID(listCRefSeq)
 
 	xslH = xlwt.Workbook(encoding='utf-8')
 	xslSheet = xslH.add_sheet("RefID, Gene Symbol")
