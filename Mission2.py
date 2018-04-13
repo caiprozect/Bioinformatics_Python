@@ -47,6 +47,8 @@ def parseWholeRefFlat(sFileName):
 
 def parseNM(listCRefSeq):
 	chromList = [str(n) for n in range(1,23)] + ['X', 'Y']
+	excludedRefID = set([])
+	excludedChromID = set([])
 	filteredList = []
 	for cRefSeq in listCRefSeq:
 		sRefID = cRefSeq.getRefID()
@@ -54,6 +56,13 @@ def parseNM(listCRefSeq):
 		sChromID = cRefSeq.getChromID()
 		if (sHead == "NM") and (sChromID in chromList):
 			filteredList.append(cRefSeq)
+		else:
+			excludedRefID.add(sRefID)
+			excludedChromID.add(sChromID)
+	print("not NM_")
+	print(excludedRefID)
+	print("\n\nnot Chrom Num")
+	print(excludedChromID)
 	return filteredList
 
 def parseUniqueNM(listCRefSeq):
@@ -63,6 +72,10 @@ def parseUniqueNM(listCRefSeq):
 		refDict[sRefID].append(cRefSeq)
 
 	uniqueList = [cRefSeq for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) == 1]
+	overlapList = set([cRefSeq.getRefID() for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) != 1])
+
+	print("\n\nnot Unique")
+	print(overlapList)
 
 	return uniqueList
 
