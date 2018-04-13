@@ -1,4 +1,5 @@
-import xlwt
+from pandas import DataFrame
+from collections import defaultdict
 
 class RefSeq:
 	def __init__(self):
@@ -11,7 +12,7 @@ class RefSeq:
 		self.lnExEndPs = []
 
 	def parse_refflat_line(self, sReadLine):
-		sFlds = sReadLine.split('\t')
+		sFlds = sReadLine.strip().split('\t')
 		self.sRefID = sFlds[1]
 		self.sGeneSymbol = sFlds[0]
 		self.sChromID = sFlds[2][3:]
@@ -21,19 +22,19 @@ class RefSeq:
 		self.lnExEndPs = [int(endP) for endP in sFlds[10].strip(",").split(",")]
 
 	def getRefID(self):
-		return sRefID
+		return self.sRefID
 	def getGeneSymbol(self):
-		return sGeneSymbol
+		return self.sGeneSymbol
 	def getChromID(self):
-		return sChromID
+		return self.sChromID
 	def getStrand(self):
-		return sStrand
+		return self.sStrand
 	def getNumExons(self):
-		return nNumExons
+		return self.nNumExons
 	def getExStartPs(self):
-		return lnExStartPs
+		return self.lnExStartPs
 	def getExEndPs(self):
-		return lnExEndPs
+		return self.lnExEndPs
 
 def parseWholeRefFlat(sFileName):
 	wholeCRefSeq = []
@@ -55,18 +56,15 @@ def parseNM(listCRefSeq):
 			filteredList.append(cRefSeq)
 	return filteredList
 
-def parseUniqueNM(sortedCRefSeqs):
-	uniqueList = []
-	nSize = len(sortedCRefSeqs)
-	nIdx = 0
-	while nIdx < nSize:
-		sCurr = sortedCRefSeqs[nIdx].getRefID()
-		sNext = sortedCRefSeqs[nIdx+1].getRefID()
-		if (sCurr == sNext):
-			nIdx += 2
-			while sortedCRefSeqs[nIdx].getRefID() == sCurr:
-				nIdx += 1
-		
+def parseUniqueNM(listCRefSeq):
+	refDict = defaultdict(list)
+	for cRefSeq in listCRefSeq:
+		sRefID = cRefSeq.getRefID()
+		refDict[sRefID].append(cRefSeq)
+
+	uniqueList = [cRefSeq for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) == 1]
+
+	return uniqueList
 
 def sortByRefSeqID(listCRefSeq):
 	listCRefSeq.sort(key = (lambda cRefSeq: int(cRefSeq.getRefID().split("_")[-1])))
@@ -77,27 +75,16 @@ def main(sFileName):
 	print("Answer 1: {}".format(len(listCRefSeq)))
 	listCRefSeq = parseNM(listCRefSeq)
 	print("Answer 2: {}".format(len(listCRefSeq)))
-	listCRefSeq = sortByRefSeqID(listCRefSeq)
 	listCRefSeq = parseUniqueNM(listCRefSeq)
 	print("Answer 3: {}".format(len(listCRefSeq)))
+	listCRefSeq = sortByRefSeqID(listCRefSeq)
 
-	xslH = xlwt.Workbook(encoding='utf-8')
-	xslSheet = xslH.add_sheet("RefID, Gene Symbol")
+	listRefID = [cRefSeq.getRefID() for cRefSeq in listCRefSeq]
+	listGeneSymbol = [cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]
 
-	xslSheet.write(0, 0, "RefSeqID")
-	xslSheet.write(0, 1, "Gene Symbol")
-
-	rowNum  = 1
-
-	for cRefSeq in listCRefSeq:
-		sRefID = cRefSeq.getRefID()
-		sGeneSymbol = cRefSeq.getGeneSymbol()
-		xslSheet.write(rowNum, 0, sRefID)
-		xslSheet.write(rowNum, 1, sGeneSymbol)
-		rowNum += 1
-
-	xslH.save("RefSeqID_GeneSymbol")
+	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol})
+	dfRefSeq.to_excel("RefSeqID_GeneSymbol.xlsx", sheet_name="sheet1", index=False)
 
 if __name__=="__main__":
-	sInFile = "./data/refFlat.txt"
+	sInFile = "../data/refFlat.txt"
 	main(sInFile)
