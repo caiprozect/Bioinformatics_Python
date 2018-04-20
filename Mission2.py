@@ -82,6 +82,7 @@ def parseUniqueNM(listCRefSeq):
 	outH = open("NotUnique", 'w')
 	print("not Unique", file=outH)
 	[print(sRefID, file=outH) for sRefID in overlapList]
+	outH.close()
 
 	return uniqueList
 
