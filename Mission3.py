@@ -12,7 +12,7 @@ class RefSeq:
 		self.lnExEndPs = []
 		#Mission3 Intermediate
 		self.sExSeq = "" #It is a concatenated + strand DNA seq!
-		self.sPORFSeq = ""
+		self.sORFSeq = ""
 		#Mission3
 		self.nExSize = 0
 		self.n5UTRSize = 0
@@ -32,6 +32,9 @@ class RefSeq:
 	def putExSeq(self, sExSeq):
 		self.sExSeq = sExSeq
 
+	def parseORF(self):
+		
+
 	def getRefID(self):
 		return self.sRefID
 	def getGeneSymbol(self):
@@ -48,7 +51,7 @@ class RefSeq:
 		return self.lnExEndPs
 	def getExSeq(self):
 		return self.sExSeq
-	def getPORFSeq(self):
+	def getORFSeq(self):
 		return self.sPORFSeq
 	def getExSize(self):
 		return self.nExSize
@@ -68,26 +71,33 @@ def genExSeqs(chromDict, listCRefSeq): #Does not accunt for strand +/-
 	for chID in lChromIDs:
 		dictCRefByChromID[chID] = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getChromID() == chID]
 	for chID in lChromIDs:
+		print("{}: Generating Exons".format(chID))
 		sChFile = "../data/{}.chroms/chr{}.fa".format(sOrganism, chID)
 		hChFile = open(sChFile, 'r')
+		hChFile.readline() #Skip the first line
 		sChromSeq = hChFile.read().upper().splitlines()
 		hChFile.close()
 		sChromSeq = "".join(sChromSeq)
 		for letter in sChromSeq:
 			assert(letter in ['A', 'C', 'G', 'T', 'N']), "{} chromosome File has unknown nucleotide character".format(chID)
 		for cRefSeq in dictCRefByChromID[chID]:
-			sExonSeq = ""
+			print("{}: Trying to put exon".format(cRefSeq.getRefID()))
+			sExSeq = ""
 			lnExStartPs = cRefSeq.getExStartPs()
 			lnExEndPs = cRefSeq.getExEndPs()
 			nNumExons = cRefSeq.getNumExons()
 			assert(len(lnExStartPs) == nNumExons), "{}: Number of exons does not match for starting positions".format(cRefSeq.getRefID())
-			assert(len(lnExEndPs) == nNumExons), "{}: Number of exons does not match for end positions",format(cRefSeq.getRefID())
+			assert(len(lnExEndPs) == nNumExons), "{}: Number of exons does not match for end positions".format(cRefSeq.getRefID())
 			lnExPs = zip(lnExStartPs, lnExEndPs)
 			for ps in lnExPs:
 				start = ps[0]
 				end = ps[1]
-				sExSeq.append(sChromSeq[start:end])
+				sExSeq = sExSeq + sChromSeq[start:end]
 				cRefSeq.putExSeq(sExSeq)
+				print("{} Exon: {} successfully added".format(cRefSeq.getRefID(), sExSeq))
+
+def genORFSeqs(listCRefSeq):
+	[cRefSeq.parseORF() for cRefSeq in listCRefSeq]
 
 #Mission2 Functions
 def parseWholeRefFlat(sFileName):
@@ -144,7 +154,7 @@ def sortByRefSeqID(listCRefSeq):
 	return listCRefSeq
 
 def main():
-	sInFile = "../data/refFlat.txt"
+	sFileName = "../data/refFlat.txt"
 	listCRefSeq = parseWholeRefFlat(sFileName)
 	print("Answer 1: {}".format(len(listCRefSeq)))
 	listCRefSeq = parseNM(listCRefSeq)
@@ -154,7 +164,8 @@ def main():
 	listCRefSeq = sortByRefSeqID(listCRefSeq)
 
 	chromDict = {'hg38': ([str(i) for i in range(1,23)]+['X','Y'])}
-	genExSeqs(chromDict, listCRefSeq)	
+	genExSeqs(chromDict, listCRefSeq)
+	genORFSeqs(listCRefSeq)	
 
 if __name__=="__main__":
 	main()
