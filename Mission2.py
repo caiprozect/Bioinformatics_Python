@@ -103,7 +103,7 @@ def main(sFileName):
 	listGeneSymbol = [cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]
 
 	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol})
-	dfRefSeq.to_excel("RefSeqID_GeneSymbol.xlsx", sheet_name="sheet1", index=False)
+	dfRefSeq.to_excel("Mission2_Output.xlsx", sheet_name="sheet1", index=False)
 
 if __name__=="__main__":
 	sInFile = "../data/refFlat.txt"

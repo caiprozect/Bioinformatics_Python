@@ -1,9 +1,8 @@
 from pandas import DataFrame
 from collections import defaultdict
-import multiprocessing as mp 
-import re
 from functools import reduce
-import numpy as np
+from time import time
+import multiprocessing as mp 
 
 class RefSeq:
 	def __init__(self):
@@ -23,6 +22,10 @@ class RefSeq:
 		self.n5UTRSize = 0
 		self.nORFSize = 0
 		self.n3UTRSize = 0
+		#Check
+		self.nCDSStart = 0
+		self.nCDSEnd = 0
+		self.sCDSSeq = ""
 
 	def parse_refflat_line(self, sReadLine):
 		sFlds = sReadLine.strip().split('\t')
@@ -34,9 +37,15 @@ class RefSeq:
 		self.lnExStartPs = [int(startP) for startP in sFlds[9].strip(",").split(",")]
 		self.lnExEndPs = [int(endP) for endP in sFlds[10].strip(",").split(",")]
 
+		self.nCDSStart = int(sFlds[6])
+		self.nCDSEnd = int(sFlds[7])
+
 	def putExSeq(self, sExSeq):
 		self.sExSeq = sExSeq
 		self.nExSize = len(sExSeq)
+
+	def putCDSSeq(self, sCDSSeq):
+		self.sCDSSeq = sCDSSeq
 
 	def putTrueEx(self):
 		if self.sStrand == '-':
@@ -50,6 +59,19 @@ class RefSeq:
 				sComplExSeq = nucl + sComplExSeq
 			self.sExSeq = sComplExSeq
 			print(self.sExSeq[-10:])
+
+	def putTrueCDS(self):
+		if self.sStrand == '-':
+			print("{}: is a - strand".format(self.sRefID))
+			print(self.sCDSSeq[0:10])
+			complNucl = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+			sComplCDSSeq = ""
+			sCDSSeq = self.sCDSSeq
+			for nucl in sCDSSeq:
+				nucl = complNucl[nucl]
+				sComplCDSSeq = nucl + sComplCDSSeq
+			self.sCDSSeq = sComplCDSSeq
+			print(self.sCDSSeq[-10:])
 
 	def parseORF(self):
 		print("{}: finding ORF".format(self.sRefID))
@@ -71,6 +93,7 @@ class RefSeq:
 					self.s3UTRSeq = sExSeq[nIdxStop:]
 					self.n3UTRSize = len(self.s3UTRSeq)
 					print(self.sORFSeq)
+					print(self.sCDSSeq)
 					nCheck = 1
 					break
 				nIdxStop += 3
@@ -114,30 +137,37 @@ class RefSeq:
 		return self.s5UTRSeq
 	def get3UTRSeq(self):
 		return self.s3UTRSeq
-#End Class Definition
 
-#Mission3 Functions
+	def getCDSStart(self):
+		return self.nCDSStart
+	def getCDSEnd(self):
+		return self.nCDSEnd
+	def getCDSSeq(self):
+		return self.sCDSSeq
+#End Class Definition
 def genExSeqsPool(chromDict, listCRefSeq):
+	sOrganism = list(chromDict.keys())[0] #Only deal with one organim
+	lChromIDs = list(chromDict.values())[0] #Only deal with one organism
+
 	mpPool = mp.Pool()
 	lJobs = []
 
-	sOrganism = list(chromDict.keys())[0] #Only deal with one organim
-	lChromIDs = list(chromDict.values())[0] #Only deal with one organism
-	dictByChID = {}
 	for chID in lChromIDs:
-		dictByChID[chID] = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getChromID() == chID]
+		listMatch = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getChromID() == chID]
+		lJobs.append( mpPool.apply_async(genExSeqs, (sOrganism, chID, listMatch)) )
 
-	for chID in lChromIDs:
-		lJobs.append( mpPool.apply_async(genExSeqs, (sOrganism, chID, dictByChID[chID])) )
-
-	lProcCRefSeq = reduce((lambda x,y: x + y), [job.get() for job in lJobs])
+	lProcRefSeq = reduce(lambda x, y: x+y, [job.get() for job in lJobs])
 
 	mpPool.close()
 
-	return lProcCRefSeq
+	return lProcRefSeq
+
+
+#Mission3 Functions
 
 def genExSeqs(sOrganism, chID, listCRefSeq): #Does not account for strand +/-
 	lProcRefSeq = []
+	listMatch = listCRefSeq
 	print("{}: Generating Exons".format(chID))
 	sChFile = "../data/{}.chroms/chr{}.fa".format(sOrganism, chID)
 	hChFile = open(sChFile, 'r')
@@ -147,7 +177,9 @@ def genExSeqs(sOrganism, chID, listCRefSeq): #Does not account for strand +/-
 	sChromSeq = "".join(sChromSeq)
 	for letter in sChromSeq:
 		assert(letter in ['A', 'C', 'G', 'T', 'N']), "{} chromosome File has unknown nucleotide character".format(chID)
-	for cRefSeq in listCRefSeq:
+	for cRefSeq in listMatch:
+		nCDSStart = cRefSeq.getCDSStart()
+		nCDSEnd = cRefSeq.getCDSEnd()
 		print("{}: Trying to put exon".format(cRefSeq.getRefID()))
 		sExSeq = ""
 		lnExStartPs = cRefSeq.getExStartPs()
@@ -155,21 +187,34 @@ def genExSeqs(sOrganism, chID, listCRefSeq): #Does not account for strand +/-
 		nNumExons = cRefSeq.getNumExons()
 		assert(len(lnExStartPs) == nNumExons), "{}: Number of exons does not match for starting positions".format(cRefSeq.getRefID())
 		assert(len(lnExEndPs) == nNumExons), "{}: Number of exons does not match for end positions".format(cRefSeq.getRefID())
-		lnExPs = zip(lnExStartPs, lnExEndPs)
+		lnExPs = list(zip(lnExStartPs, lnExEndPs))
 		for ps in lnExPs:
 			start = ps[0]
 			end = ps[1]
 			sExSeq = sExSeq + sChromSeq[start:end]
 		cRefSeq.putExSeq(sExSeq)
-		lProcRefSeq.append(cRefSeq)
 		print("Exon: {}".format(cRefSeq.getExSeq()))
 		print("{}: Exon successfully added".format(cRefSeq.getRefID()))
+
+		print("{}: Trying to put CDS".format(cRefSeq.getRefID()))
+		lnCDSPs = [ps for ps in lnExPs if ps[1] > nCDSStart]
+		lnCDSPs = [ps for ps in lnCDSPs if ps[0] < nCDSEnd]
+		lnCDSPs[0] = (nCDSStart, lnCDSPs[0][1])
+		lnCDSPs[-1] = (lnCDSPs[-1][0] ,nCDSEnd)
+		sCDSSeq = ""
+		for ps in lnCDSPs:
+			start = ps[0]
+			end = ps[1]
+			sCDSSeq = sCDSSeq + sChromSeq[start:end]
+		cRefSeq.putCDSSeq(sCDSSeq)
+		lProcRefSeq.append(cRefSeq)
 	return lProcRefSeq
 
 def takecareNegStrand(listCRefSeq):
 	lProcCRefSeq = []
 	for cRefSeq in listCRefSeq:
 		cRefSeq.putTrueEx()
+		cRefSeq.putTrueCDS()
 		lProcCRefSeq.append(cRefSeq)
 	return lProcCRefSeq
 
@@ -273,6 +318,20 @@ def main():
 	print("Answer 5: {}".format(len(listCRefSeq)), file=hOutF)
 
 	hOutF.close()	
-
+"""
+	sCheckFile = "Mission3_Check.txt"
+	hCheckF = open(sCheckFile, 'w')
+	shortORFs = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getORFSize() <= 12]
+	for cRefSeq in shortORFs:
+		sRefID = cRefSeq.getRefID()
+		sStrand = cRefSeq.getStrand()
+		sExSeq = cRefSeq.getExSeq()
+		sCDSSeq = cRefSeq.getCDSSeq()
+		print("{}\n{}\n{}\n{}".format(sRefID, sStrand, sExSeq, sCDSSeq), file=hCheckF)
+	hCheckF.close()
+"""
 if __name__=="__main__":
+	rtime = time()
 	main()
+	rtime = time() - rtime
+	print("{} seconds".format(rtime))
