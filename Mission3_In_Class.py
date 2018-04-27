@@ -87,6 +87,7 @@ class RefSeq:
 					lCodons = [sCDSSeq[i:i+3] for i in range(3, len(sCDSSeq)-3, 3)]
 					if all((stopC not in lCodons) for stopC in lStopCs):
 						nOffStart = sExSeq.find(sCDSSeq)
+						assert(nOffStart >= 0), "Does not have matching CDS"
 						nOffEnd = nOffStart + len(sCDSSeq)
 						self.s5UTRSeq = sExSeq[:nOffStart]
 						self.n5UTRSize = len(self.s5UTRSeq)
@@ -345,6 +346,36 @@ def main():
 	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol,
 		"5'UTR Size": list5UTRSize, "ORF Size": listORFSize, "3'UTR Size": list3UTRSize})
 	dfRefSeq.to_excel("Mission3_In_Class.xlsx", sheet_name="sheet1", index=False)
+
+	#Checkin Seqs
+	checkFile = "Mission3_Seq_Check.txt"
+
+	checkFileH = open(checkFile, "w")
+	for cRefSeq in listCRefSeq:
+		sRefID = cRefSeq.getRefID()
+		sExSeq = cRefSeq.getExSeq()
+		sCDSSeq = cRefSeq.getCDSSeq()
+		checkFileH.write(sRefID + "\n")
+		checkFileH.write(sExSeq + "\n")
+		checkFileH.write(sCDSSeq + "\n\n\n")
+
+	checkFileH.close()
+
+	checkNegStrand = "Mission3_Neg_Str_Chk.txt"
+	checkNegH = open(checkNegStrand, "w")
+	listNegs = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getStrand()=="-"]
+	for cRefSeq in listNegs:
+		sRefID = cRefSeq.getRefID()
+		sStrand = cRefSeq.getStrand()
+		sExSeq = cRefSeq.getExSeq()
+		sCDSSeq = cRefSeq.getCDSSeq()
+		checkNegH.write(sRefID + "\n")
+		checkNegH.write(sStrand + "\n")
+		checkNegH.write(sExSeq + "\n")
+		checkNegH.write(sCDSSeq + "\n\n\n")
+
+	checkNegH.close()
+
 """
 	sCheckFile = "Mission3_Check.txt"
 	hCheckF = open(sCheckFile, 'w')
