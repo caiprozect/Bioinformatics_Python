@@ -27,6 +27,8 @@ class RefSeq:
 		self.nCDSEnd = 0
 		self.sCDSSeq = ""
 		self.sORFCheck = ""
+		#NMD
+		self.bNMD = False
 
 	def parse_refflat_line(self, sReadLine):
 		sFlds = sReadLine.strip().split('\t')
@@ -111,6 +113,14 @@ class RefSeq:
 			print("{}: does not start with ATG".format(self.sRefID))
 			self.sORFCheck = "NO START CODON"
 
+	def checkNMD(self):
+		nAfterStop = self.nExSize - self.n3UTRSize
+		if self.sStrand == "+":
+			nLastEx = self.nExSize - (self.lnExEndPs[-1] - self.lnExStartPs[-1])
+		else:
+			nLastEx = self.nExSize - (self.lnExEndPs[0] - self.lnExStartPs[0])
+		self.bNMD = (nLastEx - nAfterStop > 50)
+
 	def getRefID(self):
 		return self.sRefID
 	def getGeneSymbol(self):
@@ -128,7 +138,7 @@ class RefSeq:
 	def getExSeq(self):
 		return self.sExSeq
 	def getORFSeq(self):
-		return self.sPORFSeq
+		return self.sORFSeq
 	def getExSize(self):
 		return self.nExSize
 	def get5UTRSize(self):
@@ -150,6 +160,9 @@ class RefSeq:
 		return self.sCDSSeq
 	def getORFCheck(self):
 		return self.sORFCheck
+
+	def getNMD(self):
+		return self.bNMD
 #End Class Definition
 
 def genExSeqsPool(chromDict, listCRefSeq):
@@ -256,6 +269,13 @@ def isoformFiltering(listCRefSeq):
 			setSeenGS.add(sGS)
 	return listFiltered
 
+def fillNMD(listCRefSeq):
+	lProcCRefSeq = []
+	for cRefSeq in listCRefSeq:
+		cRefSeq.checkNMD()
+		lProcCRefSeq.append(cRefSeq)
+	return lProcCRefSeq
+
 #Mission2 Functions
 def parseWholeRefFlat(sFileName):
 	wholeCRefSeq = []
@@ -313,7 +333,7 @@ def sortByRefSeqID(listCRefSeq):
 
 def main():
 	sFileName = "../data/refFlat.txt"
-	sOutFile = "Mission3_In_Class.txt"
+	sOutFile = "Mission3_NMD.txt"
 	hOutF = open(sOutFile, 'w')
 	listCRefSeq = parseWholeRefFlat(sFileName)
 	print("Answer 1: {}".format(len(listCRefSeq)), file=hOutF)
@@ -345,7 +365,26 @@ def main():
 
 	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol,
 		"5'UTR Size": list5UTRSize, "ORF Size": listORFSize, "3'UTR Size": list3UTRSize})
-	dfRefSeq.to_excel("Mission3_In_Class.xlsx", sheet_name="sheet1", index=False)
+	dfRefSeq.to_excel("Mission3_NMD.xlsx", sheet_name="sheet1", index=False)
+
+	for cRefSeq in listCRefSeq:
+		assert(cRefSeq.getCDSSeq() == cRefSeq.getORFSeq())
+
+	#Check NMD
+	NMDlist = fillNMD(listCRefSeq)
+	NMDlist = [cRefSeq for cRefSeq in NMDlist if cRefSeq.getNMD()]
+	NMDfile = "NMD_List.txt"
+	hNMDF = open(NMDfile, 'w')
+	print(len(NMDlist), file=hNMDF)
+	print("\n", file=hNMDF)
+	for cRefSeq in NMDlist:
+		print(cRefSeq.getRefID(), file=hNMDF)
+		print(cRefSeq.get3UTRSize(), file=hNMDF)
+		print(cRefSeq.getExEndPs()[-1] - cRefSeq.getExStartPs()[-1], file=hNMDF)
+		print(cRefSeq.getExSeq(), file=hNMDF)
+		print(cRefSeq.getORFSeq(), file=hNMDF)
+		print("\n", file=hNMDF)
+	hNMDF.close()
 
 	#Checkin Seqs
 """
