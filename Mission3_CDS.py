@@ -312,7 +312,7 @@ def sortByRefSeqID(listCRefSeq):
 
 def main():
 	sFileName = "../data/refFlat.txt"
-	sOutFile = "Mission3_CDS.txt"
+	sOutFile = "Mission3_Output.txt"
 	hOutF = open(sOutFile, 'w')
 	listCRefSeq = parseWholeRefFlat(sFileName)
 	print("Answer 1: {}".format(len(listCRefSeq)), file=hOutF)
@@ -335,6 +335,16 @@ def main():
 	print("Answer 5: {}".format(len(listCRefSeq)), file=hOutF)
 
 	hOutF.close()	
+
+	listRefID = [cRefSeq.getRefID() for cRefSeq in listCRefSeq]
+	listGeneSymbol = [cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]
+	list5UTRSize = [cRefSeq.get5UTRSize() for cRefSeq in listCRefSeq]
+	listORFSize = [cRefSeq.getORFSize() for cRefSeq in listCRefSeq]
+	list3UTRSize = [cRefSeq.get3UTRSize() for cRefSeq in listCRefSeq]
+
+	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol,
+		"5'UTR Size": list5UTRSize, "ORF Size": listORFSize, "3'UTR Size": list3UTRSize})
+	dfRefSeq.to_excel("Mission3_Output.xlsx", sheet_name="sheet1", index=False)
 """
 	sCheckFile = "Mission3_Check.txt"
 	hCheckF = open(sCheckFile, 'w')
