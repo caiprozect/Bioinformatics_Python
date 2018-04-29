@@ -347,7 +347,7 @@ def main():
 		"5'UTR Size": list5UTRSize, "ORF Size": listORFSize, "3'UTR Size": list3UTRSize})
 	dfRefSeq.to_excel("Mission3_In_Class.xlsx", sheet_name="sheet1", index=False)
 
-	#Checkin Seqs
+	#Check Seqs
 	checkFile = "Mission3_Seq_Check.txt"
 
 	checkFileH = open(checkFile, "w")
