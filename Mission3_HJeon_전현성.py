@@ -212,6 +212,7 @@ def genExSeqs(sOrganism, chID, listCRefSeq): #Does not account for strand +/-
 			start = ps[0]
 			end = ps[1]
 			sExSeq = sExSeq + sChromSeq[start:end]
+		#End for
 		cRefSeq.putExSeq(sExSeq)
 		print("Exon: {}".format(cRefSeq.getExSeq()))
 		print("{}: Exon successfully added".format(cRefSeq.getRefID()))
@@ -226,8 +227,10 @@ def genExSeqs(sOrganism, chID, listCRefSeq): #Does not account for strand +/-
 			start = ps[0]
 			end = ps[1]
 			sCDSSeq = sCDSSeq + sChromSeq[start:end]
+		#End for
 		cRefSeq.putCDSSeq(sCDSSeq)
 		lProcRefSeq.append(cRefSeq)
+	#End for
 	return lProcRefSeq
 
 def takecareNegStrand(listCRefSeq):
@@ -236,6 +239,7 @@ def takecareNegStrand(listCRefSeq):
 		cRefSeq.putTrueEx()
 		cRefSeq.putTrueCDS()
 		lProcCRefSeq.append(cRefSeq)
+	#End for
 	return lProcCRefSeq
 
 def genORFSeqs(listCRefSeq):
@@ -243,6 +247,7 @@ def genORFSeqs(listCRefSeq):
 	for cRefSeq in listCRefSeq:
 		cRefSeq.parseORF()
 		lProcCRefSeq.append(cRefSeq)
+	#End for
 	return lProcCRefSeq
 
 def onlyValidORF(listCRefSeq):
@@ -256,6 +261,7 @@ def onlyValidORF(listCRefSeq):
 		sExSeq = cRefSeq.getExSeq()
 		sCDSSeq = cRefSeq.getCDSSeq()
 		print("{}\n{}\n\n{}\n\n{}\n\n{}\n\n\n\n\n\n".format(sRefID, sStrand, sORFCheck, sExSeq, sCDSSeq), file=hCheckF)
+	#End for
 	hCheckF.close()
 	return [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getORFSize() > 0]
 
@@ -267,6 +273,7 @@ def isoformFiltering(listCRefSeq):
 		if sGS not in setSeenGS:
 			listFiltered.append(cRefSeq)
 			setSeenGS.add(sGS)
+	#End for
 	return listFiltered
 
 def fillNMD(listCRefSeq):
@@ -274,6 +281,7 @@ def fillNMD(listCRefSeq):
 	for cRefSeq in listCRefSeq:
 		cRefSeq.checkNMD()
 		lProcCRefSeq.append(cRefSeq)
+	#End for
 	return lProcCRefSeq
 
 #Mission2 Functions
@@ -284,6 +292,7 @@ def parseWholeRefFlat(sFileName):
 		cRefSeq = RefSeq()
 		cRefSeq.parse_refflat_line(sLine)
 		wholeCRefSeq.append(cRefSeq)
+	#End for
 	fileH.close()
 	return wholeCRefSeq
 
@@ -303,6 +312,7 @@ def parseNM(listCRefSeq):
 				excludedRefID.add(sRefID)
 			else:	
 				excludedChromID.add(sChromID)
+	#End for
 	outH = open("Excluded", 'w')
 	print("not NM_", file=outH)
 	[print(sRefID, file=outH) for sRefID in excludedRefID]
@@ -316,7 +326,7 @@ def parseUniqueNM(listCRefSeq):
 	for cRefSeq in listCRefSeq:
 		sRefID = cRefSeq.getRefID()
 		refDict[sRefID].append(cRefSeq)
-
+	#End for
 	uniqueList = [cRefSeq for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) == 1]
 	overlapList = set([cRefSeq.getRefID() for cRefSeq in listCRefSeq if len(refDict[cRefSeq.getRefID()]) != 1])
 
@@ -333,7 +343,7 @@ def sortByRefSeqID(listCRefSeq):
 
 def main():
 	sFileName = "../data/refFlat.txt"
-	sOutFile = "Mission3_NMD.txt"
+	sOutFile = "Mission3_HJeon.txt"
 	hOutF = open(sOutFile, 'w')
 	listCRefSeq = parseWholeRefFlat(sFileName)
 	print("Answer 1: {}".format(len(listCRefSeq)), file=hOutF)
@@ -355,7 +365,9 @@ def main():
 	listCRefSeq = isoformFiltering(listCRefSeq)
 	print("Answer 5: {}".format(len(listCRefSeq)), file=hOutF)
 
-	hOutF.close()	
+	hOutF.close()
+
+	listCRefSeq = sortByRefSeqID(listCRefSeq) #Just redundantly sorting...	
 
 	listRefID = [cRefSeq.getRefID() for cRefSeq in listCRefSeq]
 	listGeneSymbol = [cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]
@@ -365,11 +377,13 @@ def main():
 
 	dfRefSeq = DataFrame({"Ref Seq ID": listRefID, "Gene Symbol": listGeneSymbol,
 		"5'UTR Size": list5UTRSize, "ORF Size": listORFSize, "3'UTR Size": list3UTRSize})
-	dfRefSeq.to_excel("Mission3_NMD.xlsx", sheet_name="sheet1", index=False)
+	dfRefSeq.to_excel("Mission3_HJeon.xlsx", sheet_name="sheet1", index=False)
+	dfRefSeq.to_csv("Mission3_HJeon.csv", sep="\t")
 
 	#Double checking
 	for cRefSeq in listCRefSeq:
 		sORFSeq = cRefSeq.getORFSeq()
+		assert("N" not in sORFSeq)
 		assert(cRefSeq.getCDSSeq() == cRefSeq.getORFSeq())
 		assert(sORFSeq[:3] == "ATG")
 		assert(sORFSeq[-3:] in ["TAA", "TGA", "TAG"])
@@ -380,9 +394,11 @@ def main():
 		for stopC in ["TAA", "TGA", "TAG"]:
 			assert(stopC not in lCodons)
 		assert(cRefSeq.getORFSize() + cRefSeq.get5UTRSize() + cRefSeq.get3UTRSize() == cRefSeq.getExSize())
-
+		print("{} have valid ORF".format(cRefSeq.getRefID()))
+	#End for
 
 	#Check NMD
+"""
 	NMDlist = fillNMD(listCRefSeq)
 	NMDlist = [cRefSeq for cRefSeq in NMDlist if cRefSeq.getNMD()]
 	NMDfile = "NMD_List.txt"
@@ -400,8 +416,8 @@ def main():
 		print(cRefSeq.getExSize() - nlast2ExLen - (cRefSeq.getExSize() - cRefSeq.get3UTRSize()), file=hNMDF)
 		print("\n", file=hNMDF)
 	hNMDF.close()
-
-	#Checkin Seqs
+"""
+	#Checking Seqs
 """
 	checkFile = "Mission3_Seq_Check.txt"
 
