@@ -1,8 +1,10 @@
+from time import time
 from scipy import stats
+from pandas import DataFrame
 import numpy as np
 import Mission3_Lib
 
-class cMotif:
+class Motif:
 	def __init__(self):
 		self.sMotif = ""
 		self.fPValue = 0.
@@ -42,16 +44,19 @@ class cMotif:
 		return self.nSizeNDownWMotif
 	def getSizeNDownWNMotif(self):
 		return self.nSizeNDownWNMotif
+	def getContingency(self):
+		return self.mtxContingency
 
 def parseRegData(sRegDataFile):
 	dictRegData = {}
-	hRegDataF = open(sRegDataFile, 'w')
-	sRegData = read(hRegDataF)
+	hRegDataF = open(sRegDataFile, 'r')
+	sRegData = hRegDataF.readlines()
 	hRegDataF.close()
 
 	for line in sRegData:
 		flds = line.split('\t')
-		sGeneSymbol = flds[0].strip()
+		assert(len(flds)==2), "{}: Does not have proper format".format(line)
+		sGeneSymbol = flds[0].strip().upper()
 		fReg = float(flds[1].strip())
 		dictRegData[sGeneSymbol] = fReg
 	#End for
@@ -70,7 +75,7 @@ def genEveryMotif(nMotifLen, listCRefSeq):
 def initMotifClasses(listEveryMoitf):
 	listCMotif = []
 	for sMotif in listEveryMoitf:
-		cMotif = cMotif()
+		cMotif = Motif()
 		cMotif.putMotif(sMotif)
 		listCMotif.append(cMotif)
 
@@ -84,7 +89,7 @@ def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 		for cRefSeq in listCRefSeq:
 			i = 0
 			j = 0
-			sGeneSymbol = cRefSeq.getGeneSymbol()
+			sGeneSymbol = cRefSeq.getGeneSymbol().upper()
 			s3UTRSeq = cRefSeq.get3UTRSeq()
 			if sGeneSymbol in dictRegData:
 				fReg = dictRegData[sGeneSymbol]
@@ -122,6 +127,12 @@ def calculateRelRisk(mtxContingency):
 
 	return fRelRisk
 
+def significantCMotifs(listCMotif):
+	sigCMotif = [cMotif for cMotif in listCMotif if cMotif.getRelRisk() > 1.0]
+	sigCMotif.sort(key = (lambda cMotif: cMotif.getPValue()))
+
+	return sigCMotif
+
 def main():
 	sRegDataFile = "../data/Mission4_Dataset.txt"
 	nMotifLen = 7
@@ -137,8 +148,27 @@ def main():
 	listCMotif = fillMotifClasses(dictRegData, listCMotif, listCRefSeq)
 
 	#Filter RelRisk > 1.0
-
 	#Sort with P Value
+	listCMotif = significantCMotifs(listCMotif)
 
 	#Write to Excel
+	listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
+	listPValue = [cMotif.getPValue() for cMotif in listCMotif]
+	listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
+	listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
+	listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
+	listNotMotif_NotDown = [cMotif.getSizeNMotifWNDown() for cMotif in listCMotif]
+	listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
+	dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
+		"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
+		"Motif_NotDown": listNotMotif_Down, "NotMotif_NotDown": listNotMotif_NotDown,
+		"Relative_Risk": listRelRisk})
+
+	dfMotif.to_excel("Mission4_proto.xlsx", sheet_name="sheet1", index=False)
+
+if __name__ == "__main__":
+	rtime = time()
+	main()
+	rtime = time() - rtime
+	print("{} seconds".format(rtime))

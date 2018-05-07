@@ -342,7 +342,7 @@ def sortByRefSeqID(listCRefSeq):
 	return listCRefSeq
 
 def main():
-	#sFileName = "../data/refFlat.txt"
+	sFileName = "../data/refFlat.txt"
 	#sOutFile = "Mission3_HJeon.txt"
 	#hOutF = open(sOutFile, 'w')
 	listCRefSeq = parseWholeRefFlat(sFileName)
