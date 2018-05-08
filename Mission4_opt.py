@@ -73,50 +73,33 @@ def genEveryMotif(nMotifLen, listCRefSeq):
 	return list(setEveryMotif)
 
 def initMotifClasses(listEveryMoitf):
-	listCMotif = []
+	dictCMotif = {}
 	for sMotif in listEveryMoitf:
 		cMotif = Motif()
 		cMotif.putMotif(sMotif)
-		listCMotif.append(cMotif)
+		dictCMotif[sMotif] = cMotif
 
-	return listCMotif
+	return dictCMotif
 
-def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
-	sNotInReg = "Not_in_reg_proto.txt"
+def fillMotifClasses(listEveryMotif, dictRegData, dictCMotif, listCRefSeq):
+	sNotInReg = "Not_in_reg_opt.txt"
 	hNotInReg = open(sNotInReg, 'w')
-	listFilledCMotif = []
-	for cMotif in listCMotif:
-		mtxContingency = np.zeros((2,2))
-		sMotif = cMotif.getMotif()
-		for cRefSeq in listCRefSeq:
-			i = 0
-			j = 0
-			sGeneSymbol = cRefSeq.getGeneSymbol().strip().upper()
-			s3UTRSeq = cRefSeq.get3UTRSeq()
-			if sGeneSymbol in dictRegData:
-				fReg = dictRegData[sGeneSymbol]
-				if (fReg < (-0.05)):
-					i = 0
-				else:
-					i = 1
-				checkMotif = s3UTRSeq.find(sMotif)
-				if (checkMotif >= 0):
-					j = 0
-				else:
-					j = 1
-				mtxContingency[i, j] += 1
-			else:
-				print(sGeneSymbol, file=hNotInReg)
-		print(np.sum(mtxContingency)) 
-		print(len(dictRegData.keys()))
-		cMotif.putContingency(mtxContingency)
-		fOddsRatio, fPValue = stats.fisher_exact(mtxContingency)
-		cMotif.putPValue(fPValue)
-		fRelRisk = calculateRelRisk(mtxContingency)
-		cMotif.putRelRisk(fRelRisk)
-		listFilledCMotif.append(cMotif)
+	nMotifLen = len(list(dictCMotif.keys())[0])
+	setEveryMotif = set(listEveryMoitf)
+	for cRefSeq in listCRefSeq:
+		setSeenMotif = 
+		sGeneSymbol = cRefSeq.getGeneSymbol().strip().upper()
+		if sGeneSymbol in list(dictRegData.keys()):
+			fReg = dictRegData[sGeneSymbol]
+			row = 0 if (fReg < -0.5) else 1
+			s3UTR = cRefSeq.get3UTRSeq()
+			for i in range(len(s3UTR) - nMotifLen + 1):
+				sMotif = s3UTR[i:i+nMotifLen]
+
+		else:
+			print(sGeneSymbol, file=hNotInReg)
 	hNotInReg.close()
-	return listFilledCMotif
+	return list(dictCMotif.values())
 
 def calculateRelRisk(mtxContingency):
 	fN1 = mtxContingency[0, 0]
@@ -146,10 +129,10 @@ def main():
 	dictRegData = parseRegData(sRegDataFile)
 	listEveryMoitf = genEveryMotif(nMotifLen, listCRefSeq)
 	print("Number of Every Motifs: {}".format(len(listEveryMoitf)))
-	listCMotif = initMotifClasses(listEveryMoitf)
+	dictCMotif = initMotifClasses(listEveryMoitf)
 	print("Length of cMotif List: {}".format(len(listCMotif)))
-	assert(len(listEveryMoitf) == len(listCMotif))
-	listCMotif = fillMotifClasses(dictRegData, listCMotif, listCRefSeq)
+	assert(len(listEveryMoitf) == len(dictCMotif.keys()))
+	listCMotif = fillMotifClasses(listEveryMotif, dictRegData, dictCMotif, listCRefSeq)
 
 	#Filter RelRisk > 1.0
 	#Sort with P Value
@@ -161,7 +144,7 @@ def main():
 	listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
 	listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
 	listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
-	listNotMotif_NotDown = [cMotif.getSizeNDwonWNMotif() for cMotif in listCMotif]
+	listNotMotif_NotDown = [cMotif.getSizeNMotifWNDown() for cMotif in listCMotif]
 	listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
 	dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
@@ -169,7 +152,7 @@ def main():
 		"Motif_NotDown": listNotMotif_Down, "NotMotif_NotDown": listNotMotif_NotDown,
 		"Relative_Risk": listRelRisk})
 
-	dfMotif.to_excel("Mission4_proto.xlsx", sheet_name="sheet1", index=False)
+	dfMotif.to_excel("Mission4_opt.xlsx", sheet_name="sheet1", index=False)
 
 if __name__ == "__main__":
 	rtime = time()
