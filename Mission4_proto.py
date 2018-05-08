@@ -72,9 +72,9 @@ def genEveryMotif(nMotifLen, listCRefSeq):
 
 	return list(setEveryMotif)
 
-def initMotifClasses(listEveryMoitf):
+def initMotifClasses(listEveryMotif):
 	listCMotif = []
-	for sMotif in listEveryMoitf:
+	for sMotif in listEveryMotif:
 		cMotif = Motif()
 		cMotif.putMotif(sMotif)
 		listCMotif.append(cMotif)
@@ -144,11 +144,11 @@ def main():
 	listCRefSeq = Mission3_Lib.main()
 	assert(len(listCRefSeq) == 19076)
 	dictRegData = parseRegData(sRegDataFile)
-	listEveryMoitf = genEveryMotif(nMotifLen, listCRefSeq)
-	print("Number of Every Motifs: {}".format(len(listEveryMoitf)))
-	listCMotif = initMotifClasses(listEveryMoitf)
+	listEveryMotif = genEveryMotif(nMotifLen, listCRefSeq)
+	print("Number of Every Motifs: {}".format(len(listEveryMotif)))
+	listCMotif = initMotifClasses(listEveryMotif)
 	print("Length of cMotif List: {}".format(len(listCMotif)))
-	assert(len(listEveryMoitf) == len(listCMotif))
+	assert(len(listEveryMotif) == len(listCMotif))
 	listCMotif = fillMotifClasses(dictRegData, listCMotif, listCRefSeq)
 
 	#Filter RelRisk > 1.0
