@@ -84,6 +84,7 @@ def initMotifClasses(listEveryMotif):
 def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 	sNotInReg = "Not_in_reg_proto.txt"
 	hNotInReg = open(sNotInReg, 'w')
+	setNotInReg = set([])
 	listFilledCMotif = []
 	for cMotif in listCMotif:
 		mtxContingency = np.zeros((2,2))
@@ -106,7 +107,7 @@ def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 					j = 1
 				mtxContingency[i, j] += 1
 			else:
-				print(sGeneSymbol, file=hNotInReg)
+				setNotInReg.add(sGeneSymbol)
 		print(np.sum(mtxContingency)) 
 		print(len(dictRegData.keys()))
 		cMotif.putContingency(mtxContingency)
