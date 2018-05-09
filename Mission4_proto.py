@@ -82,8 +82,6 @@ def initMotifClasses(listEveryMotif):
 	return listCMotif
 
 def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
-	sNotInReg = "Not_in_reg_proto.txt"
-	hNotInReg = open(sNotInReg, 'w')
 	setNotInReg = set([])
 	listFilledCMotif = []
 	for cMotif in listCMotif:
@@ -116,6 +114,9 @@ def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 		fRelRisk = calculateRelRisk(mtxContingency)
 		cMotif.putRelRisk(fRelRisk)
 		listFilledCMotif.append(cMotif)
+	sNotInReg = "Not_in_reg_proto.txt"
+	hNotInReg = open(sNotInReg, 'w')
+	print("\n".join(list(setNotInReg)), file=hNotInReg)
 	hNotInReg.close()
 	return listFilledCMotif
 
