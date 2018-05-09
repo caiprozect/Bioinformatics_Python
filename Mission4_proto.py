@@ -95,7 +95,7 @@ def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 			s3UTRSeq = cRefSeq.get3UTRSeq()
 			if sGeneSymbol in dictRegData:
 				fReg = dictRegData[sGeneSymbol]
-				if (fReg < (-0.05)):
+				if (fReg < (-0.5)):
 					i = 0
 				else:
 					i = 1
@@ -161,12 +161,12 @@ def main():
 	listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
 	listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
 	listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
-	listNotMotif_NotDown = [cMotif.getSizeNDwonWNMotif() for cMotif in listCMotif]
+	listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
 	listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
 	dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
 		"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
-		"Motif_NotDown": listNotMotif_Down, "NotMotif_NotDown": listNotMotif_NotDown,
+		"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
 		"Relative_Risk": listRelRisk})
 
 	dfMotif.to_excel("Mission4_proto.xlsx", sheet_name="sheet1", index=False)

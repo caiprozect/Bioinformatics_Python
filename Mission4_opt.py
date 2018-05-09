@@ -185,7 +185,7 @@ def main():
 
 	dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
 		"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
-		"Motif_NotDown": listNotMotif_Down, "NotMotif_NotDown": listNotMotif_NotDown,
+		"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
 		"Relative_Risk": listRelRisk})
 
 	dfMotif.to_excel("Mission4_opt.xlsx", sheet_name="sheet1", index=False)
