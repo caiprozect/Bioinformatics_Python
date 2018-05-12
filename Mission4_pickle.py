@@ -2,11 +2,172 @@ from time import time
 from scipy import stats
 from pandas import DataFrame
 import numpy as np
-import Mission3_Lib
+import pickle
 
 WHOLE_SIZE = 0;
 DOWN_SIZE = 0;
 NOT_DOWN_SIZE = 0;
+
+class RefSeq:
+	def __init__(self):
+		self.sRefID = ""
+		self.sGeneSymbol = ""
+		self.sChromID = ""
+		self.sStrand = ""
+		self.nNumExons = 0
+		self.lnExStartPs = []
+		self.lnExEndPs = []
+		#Mission3
+		self.sExSeq = "" #It is a concatenated + strand DNA seq!
+		self.sORFSeq = ""
+		self.s5UTRSeq = ""
+		self.s3UTRSeq = ""
+		self.nExSize = 0
+		self.n5UTRSize = 0
+		self.nORFSize = 0
+		self.n3UTRSize = 0
+		#Check
+		self.nCDSStart = 0
+		self.nCDSEnd = 0
+		self.sCDSSeq = ""
+		self.sORFCheck = ""
+		#NMD
+		self.bNMD = False
+
+	def parse_refflat_line(self, sReadLine):
+		sFlds = sReadLine.strip().split('\t')
+		self.sRefID = sFlds[1]
+		self.sGeneSymbol = sFlds[0]
+		self.sChromID = sFlds[2][3:]
+		self.sStrand = sFlds[3]
+		self.nNumExons = int(sFlds[8])
+		self.lnExStartPs = [int(startP) for startP in sFlds[9].strip(",").split(",")]
+		self.lnExEndPs = [int(endP) for endP in sFlds[10].strip(",").split(",")]
+
+		self.nCDSStart = int(sFlds[6])
+		self.nCDSEnd = int(sFlds[7])
+
+	def putExSeq(self, sExSeq):
+		self.sExSeq = sExSeq
+		self.nExSize = len(sExSeq)
+
+	def putCDSSeq(self, sCDSSeq):
+		self.sCDSSeq = sCDSSeq
+
+	def putTrueEx(self):
+		if self.sStrand == '-':
+			print("{}: is a - strand".format(self.sRefID))
+			print(self.sExSeq[0:10])
+			complNucl = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+			sComplExSeq = ""
+			sExSeq = self.sExSeq
+			for nucl in sExSeq:
+				nucl = complNucl[nucl]
+				sComplExSeq = nucl + sComplExSeq
+			self.sExSeq = sComplExSeq
+			print(self.sExSeq[-10:])
+
+	def putTrueCDS(self):
+		if self.sStrand == '-':
+			print("{}: is a - strand".format(self.sRefID))
+			print(self.sCDSSeq[0:10])
+			complNucl = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+			sComplCDSSeq = ""
+			sCDSSeq = self.sCDSSeq
+			for nucl in sCDSSeq:
+				nucl = complNucl[nucl]
+				sComplCDSSeq = nucl + sComplCDSSeq
+			self.sCDSSeq = sComplCDSSeq
+			print(self.sCDSSeq[-10:])
+
+	def parseORF(self):
+		#print("{}: finding ORF".format(self.sRefID))
+		sExSeq = self.sExSeq
+		sCDSSeq = self.sCDSSeq
+		sStartC = 'ATG'
+		lStopCs = ['TAG', 'TAA', 'TGA']
+		
+		if sCDSSeq[:3] == sStartC:
+			if sCDSSeq[-3:] in lStopCs:
+				if len(sCDSSeq)%3 == 0:
+					lCodons = [sCDSSeq[i:i+3] for i in range(3, len(sCDSSeq)-3, 3)]
+					if all((stopC not in lCodons) for stopC in lStopCs):
+						nOffStart = sExSeq.find(sCDSSeq)
+						assert(nOffStart >= 0), "Does not have matching CDS"
+						nOffEnd = nOffStart + len(sCDSSeq)
+						self.s5UTRSeq = sExSeq[:nOffStart]
+						self.n5UTRSize = len(self.s5UTRSeq)
+						self.sORFSeq = sExSeq[nOffStart:nOffEnd]
+						self.nORFSize = len(self.sORFSeq)
+						self.s3UTRSeq = sExSeq[nOffEnd:]
+						self.n3UTRSize = len(self.s3UTRSeq)
+						#print("{}: legitimate ORF".format(self.sRefID))
+						assert(self.sORFSeq[:3] == 'ATG'), "Wrong Start Codon"
+						assert(self.sORFSeq[-3:] in lStopCs), "Wrong End Codon"
+					else:
+						print("{}: internal stop codon".format(self.sRefID))
+						self.sORFCheck = "INTERNAL STOP CODON"
+				else:
+					print("{}: not a multiple of 3".format(self.sRefID))
+					self.sORFCheck = "No MULTIPLE OF 3"
+			else:
+				print("{}: does not end with STOP Codon".format(self.sRefID))
+				self.sORFCheck = "NO STOP CODON"
+		else:
+			print("{}: does not start with ATG".format(self.sRefID))
+			self.sORFCheck = "NO START CODON"
+
+	def checkNMD(self):
+		nAfterStop = self.nExSize - self.n3UTRSize
+		if self.sStrand == "+":
+			nLastEx = self.nExSize - (self.lnExEndPs[-1] - self.lnExStartPs[-1])
+		else:
+			nLastEx = self.nExSize - (self.lnExEndPs[0] - self.lnExStartPs[0])
+		self.bNMD = (nLastEx - nAfterStop > 50)
+
+	def getRefID(self):
+		return self.sRefID
+	def getGeneSymbol(self):
+		return self.sGeneSymbol
+	def getChromID(self):
+		return self.sChromID
+	def getStrand(self):
+		return self.sStrand
+	def getNumExons(self):
+		return self.nNumExons
+	def getExStartPs(self):
+		return self.lnExStartPs
+	def getExEndPs(self):
+		return self.lnExEndPs
+	def getExSeq(self):
+		return self.sExSeq
+	def getORFSeq(self):
+		return self.sORFSeq
+	def getExSize(self):
+		return self.nExSize
+	def get5UTRSize(self):
+		return self.n5UTRSize
+	def getORFSize(self):
+		return self.nORFSize
+	def get3UTRSize(self):
+		return self.n3UTRSize
+	def get5UTRSeq(self):
+		return self.s5UTRSeq
+	def get3UTRSeq(self):
+		return self.s3UTRSeq
+
+	def getCDSStart(self):
+		return self.nCDSStart
+	def getCDSEnd(self):
+		return self.nCDSEnd
+	def getCDSSeq(self):
+		return self.sCDSSeq
+	def getORFCheck(self):
+		return self.sORFCheck
+
+	def getNMD(self):
+		return self.bNMD
+#End Class Definition
 
 class Motif:
 	def __init__(self):
@@ -194,15 +355,17 @@ def main():
 	sRegDataFile = "../data/Mission4_Dataset.txt"
 	nMotifLen = 7
 
-	listCRefSeq = Mission3_Lib.main()
+	pickle_off = open("../data/Mission3.pickle", "rb")
+	listCRefSeq = pickle.load(pickle_off)
+	pickle_off.close()
 	assert(len(listCRefSeq) == 19076)
 	dictRegData = parseRegData(sRegDataFile)
 
-	sInRegNotInRef = "In_reg_not_in_ref_faster.txt"
-	hInRegNotInRef = open(sInRegNotInRef, 'w')
-	listInRegNotInRef = list(set(list(dictRegData.keys())) - set([cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]))
-	print("\n".join(listInRegNotInRef), file=hInRegNotInRef)
-	hInRegNotInRef.close()
+	#sInRegNotInRef = "In_reg_not_in_ref_pickle.txt"
+	#hInRegNotInRef = open(sInRegNotInRef, 'w')
+	#listInRegNotInRef = list(set(list(dictRegData.keys())) - set([cRefSeq.getGeneSymbol() for cRefSeq in listCRefSeq]))
+	#print("\n".join(listInRegNotInRef), file=hInRegNotInRef)
+	#hInRegNotInRef.close()
 
 	listEveryMotif = genEveryMotif(nMotifLen, listCRefSeq)
 	print("Number of Every Motifs: {}".format(len(listEveryMotif)))
@@ -242,7 +405,7 @@ def main():
 		"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
 		"Relative_Risk": listRelRisk})
 
-	dfMotif.to_excel("Mission4_faster.xlsx", sheet_name="sheet1", index=False)
+	dfMotif.to_excel("Mission4_pickle.xlsx", sheet_name="sheet1", index=False)
 
 if __name__ == "__main__":
 	rtime = time()
