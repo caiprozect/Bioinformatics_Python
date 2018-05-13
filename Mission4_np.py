@@ -3,6 +3,7 @@ from scipy import stats
 from pandas import DataFrame
 import numpy as np
 import pickle
+import multiprocessing as mp 
 
 WHOLE_SIZE = 0;
 DOWN_SIZE = 0;
@@ -246,6 +247,21 @@ def initMotifClasses(listEveryMotif):
 
 	return listCMotif
 
+def process_motif_class(cMotif, listDownCRef, listNotDownCRef):
+	mtxContingency = np.zeros((2,2))
+	sMotif = cMotif.getMotif()
+	print("{}: Processing".format(sMotif))
+	mtxContingency[0,0] = np.sum(np.char.find(listDownCRef, sMotif) != -1)
+	mtxContingency[0,1] = np.sum(np.char.find(listDownCRef, sMotif) == -1)
+	mtxContingency[1,0] = np.sum(np.char.find(listNotDownCRef, sMotif) != -1)
+	mtxContingency[1,1] = np.sum(np.char.find(listDownCRef, sMotif) == -1)
+	cMotif.putContingency(mtxContingency)
+	OddsRatio, PValue = stats.fisher_exact(mtxContingency)
+	fRelRisk = calculateRelRisk(mtxContingency)
+	cMotif.putPValue(PValue)
+	cMotif.putRelRisk(fRelRisk)
+	return cMotif
+
 def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 	#sNotInReg = "Not_in_reg_opt.txt"
 	#hNotInReg = open(sNotInReg, 'w')
@@ -275,19 +291,10 @@ def fillMotifClasses(dictRegData, listCMotif, listCRefSeq):
 	print("Down Size: {}".format(nDownSize))
 	print("Not Down Size: {}".format(nNotDownSize))
 
-	for cMotif in listCMotif:
-		mtxContingency = np.zeros((2,2))
-		sMotif = cMotif.getMotif()
-		mtxContingency[0,0] = np.sum(np.char.find(listDownCRef, sMotif) != -1)
-		mtxContingency[0,1] = np.sum(np.char.find(listDownCRef, sMotif) == -1)
-		mtxContingency[1,0] = np.sum(np.char.find(listNotDownCRef, sMotif) != -1)
-		mtxContingency[1,1] = np.sum(np.char.find(listDownCRef, sMotif) == -1)
-		cMotif.putContingency(mtxContingency)
-		OddsRatio, PValue = stats.fisher_exact(mtxContingency)
-		fRelRisk = calculateRelRisk(mtxContingency)
-		cMotif.putPValue(PValue)
-		cMotif.putRelRisk(fRelRisk)
-		listFilledMotif.append(cMotif)
+	mpPool = mp.Pool()
+	lJobs = [mpPool.apply_async(process_motif_class, (cMotif, listDownCRef, listNotDownCRef)) for cMotif in listCMotif]
+	listFilledMotif = [job.get() for job in lJobs]
+	mpPool.close()
 
 	#hNotInReg.close()
 	return listFilledMotif
@@ -340,12 +347,19 @@ def main():
 
 	#Write to Excel
 	listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
+	print(listMotifSeq[:10])
 	listPValue = [cMotif.getPValue() for cMotif in listCMotif]
+	print(listPValue[:10])
 	listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
+	print(listMotif_Down[:10])
 	listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
+	print(listNotMotif_Down[:10])
 	listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
+	print(listMotif_NotDown[:10])
 	listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
+	print(listNotMotif_NotDown[:10])
 	listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
+	print(listRelRisk[:10])
 
 	print("Down Size: {}".format(DOWN_SIZE))
 	arrayDown = np.array(listMotif_Down) + np.array(listNotMotif_Down)
