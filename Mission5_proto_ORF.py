@@ -65,7 +65,6 @@ def bonferroni_correction(listCMotif):
 	return listCorrCMotif
 
 def fill_target_info(listCMotif, listCMiRNA):
-	listTargetInfoFilled = []
 	dictCMotif = {}
 
 	for cMotif in listCMotif:
@@ -80,14 +79,14 @@ def fill_target_info(listCMotif, listCMiRNA):
 		if s7mer_m8_seq in dictCMotif:
 			cM8Motif = dictCMotif[s7mer_m8_seq]
 			cM8Motif.put_miRNA_Info(sName, "7mer-m8")
-			listTargetInfoFilled.append(cM8Motif)
+			dictCMotif[s7mer_m8_seq] = cM8Motif
 
 		if s7mer_A1_seq in dictCMotif:
 			cA1Motif = dictCMotif[s7mer_A1_seq]
 			cA1Motif.put_miRNA_Info(sName, "7mer-A1")
-			listTargetInfoFilled.append(cA1Motif)
+			dictCMotif[s7mer_A1_seq] = cA1Motif
 
-	return listTargetInfoFilled
+	return list(dictCMotif.values())
 
 
 class RefSeq:
@@ -597,9 +596,9 @@ class Motif:
 		sTypeInfo = ""
 
 		for sMiRNA, sType in self.dict_miRNA_Info.items():
-			sTypeInfo += sType + ": " + sMiRNA + "\t"
+			sTypeInfo += sType + ": " + sMiRNA + ","
 
-		return sTypeInfo.strip()
+		return sTypeInfo.strip(',')
 
 	#Get fucntions
 	def getMotif(self):
@@ -865,7 +864,7 @@ def main_5():
 			listCMotif = listSortedCMotif
 
 			#Write to excel
-			sExcelFile = sRegDataHeader + str(i) + "_proto" + sRegion + ".xlsx"
+			sExcelFile = sRegDataHeader + str(i) + "_proto_" + sRegion + ".xlsx"
 			listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
 			listPValue = [cMotif.getPValue() for cMotif in listCMotif]
 			listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]

@@ -52,15 +52,23 @@ def reverse_transcript(sSeq):
 
 	return sRTSeq
 
-def bonferroni_correction(listCMotif):
+def benjamini_hochberg(listCMotif, nQ):
+	listPValue = []
 	listCorrCMotif = []
-	bonferroniCoeff = len(listCMotif)
+	nM = len(listCMotif)
+	print("m: {}".format(nM))
 
-	for cMotif in listCMotif:
+	for rank, cMotif in enumerate(listCMotif):
 		fPValue = cMotif.getPValue()
-		fCorrPValue = min(1., fPValue * bonferroniCoeff)
-		cMotif.putPValue(fCorrPValue)
-		listCorrCMotif.append(cMotif)
+		nRank = rank + 1
+		critical_value = (nRank / float(nM)) * nQ
+
+		if fPValue < critical_value:
+			listPValue.append(fPValue)
+
+	if listPValue != []:
+		critical_P = max(listPValue)
+		listCorrCMotif = [cMotif for cMotif in listCMotif if cMotif.getPValue() <= critical_P]
 
 	return listCorrCMotif
 
@@ -596,9 +604,9 @@ class Motif:
 		sTypeInfo = ""
 
 		for sMiRNA, sType in self.dict_miRNA_Info.items():
-			sTypeInfo += sType + ": " + sMiRNA + "\t"
+			sTypeInfo += sType + ": " + sMiRNA + ","
 
-		return sTypeInfo.strip()
+		return sTypeInfo.strip(',')
 
 	#Get fucntions
 	def getMotif(self):
@@ -635,13 +643,28 @@ def parseRegData(sRegDataFile):
 	#End for
 	return dictRegData
 
-def genEveryMotif(nMotifLen, listCRefSeq):
+def genEveryMotif(nMotifLen, listCRefSeq, sRegion):
 	setEveryMotif = set([])
-	for cRefSeq in listCRefSeq:
-		s3UTRSeq = cRefSeq.get3UTRSeq()
-		for i in range(len(s3UTRSeq) - nMotifLen + 1):
-			sMotif = s3UTRSeq[i : i+nMotifLen]
-			setEveryMotif.add(sMotif)
+	if sRegion == "3UTR":
+		for cRefSeq in listCRefSeq:
+			s3UTRSeq = cRefSeq.get3UTRSeq()
+			for i in range(len(s3UTRSeq) - nMotifLen + 1):
+				sMotif = s3UTRSeq[i : i+nMotifLen]
+				setEveryMotif.add(sMotif)
+
+	if sRegion == "ORF":
+		for cRefSeq in listCRefSeq:
+			sORFSeq = cRefSeq.getORFSeq()
+			for i in range(len(sORFSeq) - nMotifLen + 1):
+				sMotif = sORFSeq[i : i+nMotifLen]
+				setEveryMotif.add(sMotif)
+
+	if sRegion == "5UTR":
+		for cRefSeq in listCRefSeq:
+			s5UTRSeq = cRefSeq.get5UTRSeq()
+			for i in range(len(s5UTRSeq) - nMotifLen + 1):
+				sMotif = s5UTRSeq[i : i+nMotifLen]
+				setEveryMotif.add(sMotif)
 
 	return list(setEveryMotif)
 
@@ -654,7 +677,7 @@ def initMotifClasses(listEveryMotif):
 
 	return dictCMotif
 
-def fillMotifClasses(dictRegData, dictCMotif, listCRefSeq):
+def fillMotifClasses(dictRegData, dictCMotif, listCRefSeq, sRegion):
 	#sNotInReg = "Not_in_reg_opt.txt"
 	#hNotInReg = open(sNotInReg, 'w')
 
@@ -681,36 +704,101 @@ def fillMotifClasses(dictRegData, dictCMotif, listCRefSeq):
 	print("Down Size: {}".format(nDownSize))
 	print("Not Down Size: {}".format(nNotDownSize))
 
-	for cRefSeq in listDownCRef:
-		s3UTR = cRefSeq.get3UTRSeq()
-		n3UTRSize = len(s3UTR)
-		setSeenMotif = set([])
+	if sRegion == "3UTR":
+		for cRefSeq in listDownCRef:
+			s3UTR = cRefSeq.get3UTRSeq()
+			n3UTRSize = len(s3UTR)
+			setSeenMotif = set([])
 
-		for i in range(n3UTRSize - nMotifLen + 1):
-			sMotif = s3UTR[i : i+nMotifLen]
-			if sMotif not in setSeenMotif:
-				setSeenMotif.add(sMotif)
-				cMotif = dictCMotif[sMotif]
-				cMotif.addContingency(0, 0)
-				dictCMotif[sMotif] = cMotif
+			for i in range(n3UTRSize - nMotifLen + 1):
+				sMotif = s3UTR[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(0, 0)
+					dictCMotif[sMotif] = cMotif
 
-	for cRefSeq in listNotDownCRef:
-		s3UTR = cRefSeq.get3UTRSeq()
-		n3UTRSize = len(s3UTR)
-		setSeenMotif = set([])
+		for cRefSeq in listNotDownCRef:
+			s3UTR = cRefSeq.get3UTRSeq()
+			n3UTRSize = len(s3UTR)
+			setSeenMotif = set([])
 
-		for i in range(n3UTRSize - nMotifLen + 1):
-			sMotif = s3UTR[i : i+nMotifLen]
-			if sMotif not in setSeenMotif:
-				setSeenMotif.add(sMotif)
-				cMotif = dictCMotif[sMotif]
-				cMotif.addContingency(1, 0)
-				dictCMotif[sMotif] = cMotif
+			for i in range(n3UTRSize - nMotifLen + 1):
+				sMotif = s3UTR[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(1, 0)
+					dictCMotif[sMotif] = cMotif
 
-	for key, val in dictCMotif.items():
-		cMotif = val
-		cMotif.fillNotMotifContingency(nDownSize, nNotDownSize)
-		dictCMotif[key] = cMotif
+		for key, val in dictCMotif.items():
+			cMotif = val
+			cMotif.fillNotMotifContingency(nDownSize, nNotDownSize)
+			dictCMotif[key] = cMotif
+
+	if sRegion == "ORF":
+		for cRefSeq in listDownCRef:
+			sORF = cRefSeq.getORFSeq()
+			nORFSize = len(sORF)
+			setSeenMotif = set([])
+
+			for i in range(nORFSize - nMotifLen + 1):
+				sMotif = sORF[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(0, 0)
+					dictCMotif[sMotif] = cMotif
+
+		for cRefSeq in listNotDownCRef:
+			sORF = cRefSeq.getORFSeq()
+			nORFSize = len(sORF)
+			setSeenMotif = set([])
+
+			for i in range(nORFSize - nMotifLen + 1):
+				sMotif = sORF[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(1, 0)
+					dictCMotif[sMotif] = cMotif
+
+		for key, val in dictCMotif.items():
+			cMotif = val
+			cMotif.fillNotMotifContingency(nDownSize, nNotDownSize)
+			dictCMotif[key] = cMotif
+
+	if sRegion == "5UTR":
+		for cRefSeq in listDownCRef:
+			s5UTR = cRefSeq.get5UTRSeq()
+			n5UTRSize = len(s5UTR)
+			setSeenMotif = set([])
+
+			for i in range(n5UTRSize - nMotifLen + 1):
+				sMotif = s5UTR[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(0, 0)
+					dictCMotif[sMotif] = cMotif
+
+		for cRefSeq in listNotDownCRef:
+			s5UTR = cRefSeq.get5UTRSeq()
+			n5UTRSize = len(s5UTR)
+			setSeenMotif = set([])
+
+			for i in range(n5UTRSize - nMotifLen + 1):
+				sMotif = s5UTR[i : i+nMotifLen]
+				if sMotif not in setSeenMotif:
+					setSeenMotif.add(sMotif)
+					cMotif = dictCMotif[sMotif]
+					cMotif.addContingency(1, 0)
+					dictCMotif[sMotif] = cMotif
+
+		for key, val in dictCMotif.items():
+			cMotif = val
+			cMotif.fillNotMotifContingency(nDownSize, nNotDownSize)
+			dictCMotif[key] = cMotif
 
 	#hNotInReg.close()
 	return list(dictCMotif.values())
@@ -748,7 +836,7 @@ def significantCMotifs(listCMotif):
 
 
 
-def main_4(sRegDataFile, listCRefSeq):
+def main_4(sRegDataFile, listCRefSeq, sRegion):
 	nMotifLen = 7
 
 	#listCRefSeq = main_3()
@@ -761,12 +849,12 @@ def main_4(sRegDataFile, listCRefSeq):
 	#print("\n".join(listInRegNotInRef), file=hInRegNotInRef)
 	#hInRegNotInRef.close()
 
-	listEveryMotif = genEveryMotif(nMotifLen, listCRefSeq)
+	listEveryMotif = genEveryMotif(nMotifLen, listCRefSeq, sRegion)
 	print("Number of Every Motifs: {}".format(len(listEveryMotif)))
 	dictCMotif = initMotifClasses(listEveryMotif)
 	print("Length of cMotif List: {}".format(len(list(dictCMotif.keys()))))
 	assert(len(listEveryMotif) == len(dictCMotif.keys()))
-	listCMotif = fillMotifClasses(dictRegData, dictCMotif, listCRefSeq)
+	listCMotif = fillMotifClasses(dictRegData, dictCMotif, listCRefSeq, sRegion)
 	listCMotif = fillStatistics(listCMotif)
 
 	#Filter RelRisk > 1.0
@@ -810,35 +898,37 @@ def main_5():
 	sMiRNAFile = "../data/mature.fa"
 	listCMiRNA = fill_miRNA(sMiRNAFile)
 	sRegDataHeader = "../data/Mission5_Dataset"
+	regions = ["3UTR", "ORF", "5UTR"]
 	for i in range(1,4):
-		sRegDataFile = sRegDataHeader + str(i) + ".txt"
-		listCMotif = main_4(sRegDataFile, listCRefSeq)
-		listCMotif = bonferroni_correction(listCMotif)
-		listCMotif = fill_target_info(listCMotif, listCMiRNA)
-		
-		listSortedCMotif = significantCMotifs(listCMotif)
-		assert(len(listCMotif) == len(listSortedCMotif))
-		listCMotif = listSortedCMotif
+		for sRegion in regions:
+			sRegDataFile = sRegDataHeader + str(i) + ".txt"
+			listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
+			listCMotif = benjamini_hochberg(listCMotif, 0.10)
+			listCMotif = fill_target_info(listCMotif, listCMiRNA)
+			
+			listSortedCMotif = significantCMotifs(listCMotif)
+			assert(len(listCMotif) == len(listSortedCMotif))
+			listCMotif = listSortedCMotif
 
-		#Write to excel
-		sExcelFile = sRegDataHeader + str(i) + "_proto_3UTR.xlsx"
-		listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
-		listPValue = [cMotif.getPValue() for cMotif in listCMotif]
-		listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
-		listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
-		listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
-		listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
-		listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
+			#Write to excel
+			sExcelFile = sRegDataHeader + str(i) + "_FDR_" + sRegion + ".xlsx"
+			listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
+			listPValue = [cMotif.getPValue() for cMotif in listCMotif]
+			listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
+			listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
+			listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
+			listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
+			listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
-		listTargetInfo = [cMotif.getParsedTypeInfo() for cMotif in listCMotif]
+			listTargetInfo = [cMotif.getParsedTypeInfo() for cMotif in listCMotif]
 
-		dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
-		"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
-		"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
-		"Relative_Risk": listRelRisk,
-		"Match with known miRNAs": listTargetInfo})
+			dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
+			"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
+			"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
+			"Relative_Risk": listRelRisk,
+			"Match with known miRNAs": listTargetInfo})
 
-		dfMotif.to_excel(sExcelFile, sheet_name="sheet1", index=False)
+			dfMotif.to_excel(sExcelFile, sheet_name="sheet1", index=False)
 
 if __name__ == "__main__":
 	rtime = time()
