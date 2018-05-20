@@ -909,9 +909,33 @@ def check_miRNA_extension(cMiRNA, listCRefSeq):
 			listExtLen.append(cnt)
 	return listExtLen
 
+def check_target_repeats(cMiRNA, listCRefSeq):
+	listRepeatLen = []
+	sRNASeq = cMiRNA.getSeq()[1:8]
+	for cRefSeq in listCRefSeq:
+		sORFSeq = cRefSeq.getORFSeq()
+		nRepeat_Count = 0
+		if sRNASeq in sORFSeq:
+			for i in range(len(sORFSeq)):
+				sSub = sORFSeq[i:i+7]
+				if sRNASeq == sSub:
+					nRepeat_Count += 1
+			listRepeatLen.append(nRepeat_Count)
+
+	return listRepeatLen 
+
+def check_correlation(cMiRNA, listCRefSeq):
+	corr_cnt = 0
+	sRNASeq = cMiRNA.getSeq()[-7:]
+	for cRefSeq in listCRefSeq:
+		if sRNASeq in cRefSeq.get3UTRSeq() and sRNASeq in cRefSeq.getORFSeq():
+			corr_cnt += 1
+
+	return corr_cnt
+
 def main_5():
-	s_miRNA_Name = "miR-7-5p"
-	sRegDataFile = "../data/Mission5_Dataset3.txt"
+	s_miRNA_Name = "miR-9-5p"
+	sRegDataFile = "../data/Mission5_Dataset1.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -925,8 +949,8 @@ def main_5():
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
 	cMiRNA = dictCMiRNA[s_miRNA_Name]
-	listExtLen = check_miRNA_extension(cMiRNA, listCRefSeq)
-	print(sum(listExtLen) / float(len(listExtLen)))
+	nNumCorr = check_correlation(cMiRNA, listCRefSeq)
+	print(nNumCorr)
 
 if __name__ == "__main__":
 	rtime = time()

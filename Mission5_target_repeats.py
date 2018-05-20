@@ -909,9 +909,39 @@ def check_miRNA_extension(cMiRNA, listCRefSeq):
 			listExtLen.append(cnt)
 	return listExtLen
 
+def check_target_repeats(cMiRNA, listCRefSeq):
+	listRepeatLen = []
+	sRNASeq = cMiRNA.getSeq()[-7:]
+	for cRefSeq in listCRefSeq:
+		sORFSeq = cRefSeq.getORFSeq()
+		nRepeat_Count = 0
+		if sRNASeq in sORFSeq:
+			for i in range(len(sORFSeq)):
+				sSub = sORFSeq[i:i+7]
+				if sRNASeq == sSub:
+					nRepeat_Count += 1
+			listRepeatLen.append(nRepeat_Count)
+
+	return listRepeatLen 
+
+def check_target_repeats_A1(cMiRNA, listCRefSeq):
+	listRepeatLen = []
+	sRNASeq = cMiRNA.getSeq()[-6:] + "A"
+	for cRefSeq in listCRefSeq:
+		sORFSeq = cRefSeq.getORFSeq()
+		nRepeat_Count = 0
+		if sRNASeq in sORFSeq:
+			for i in range(len(sORFSeq)):
+				sSub = sORFSeq[i:i+7]
+				if sRNASeq == sSub:
+					nRepeat_Count += 1
+			listRepeatLen.append(nRepeat_Count)
+
+	return listRepeatLen 
+
 def main_5():
-	s_miRNA_Name = "miR-7-5p"
-	sRegDataFile = "../data/Mission5_Dataset3.txt"
+	s_miRNA_Name = "miR-4742-3p"
+	sRegDataFile = "../data/Mission5_Dataset1.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -925,8 +955,15 @@ def main_5():
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
 	cMiRNA = dictCMiRNA[s_miRNA_Name]
-	listExtLen = check_miRNA_extension(cMiRNA, listCRefSeq)
-	print(sum(listExtLen) / float(len(listExtLen)))
+	listReapeatLen = check_target_repeats(cMiRNA, listCRefSeq)
+	print(sum(listReapeatLen) / float(len(listReapeatLen)))
+	print(max(listReapeatLen))
+	print(len([elem for elem in listReapeatLen if elem > 2]))
+
+	listReapeatLen = check_target_repeats_A1(cMiRNA, listCRefSeq)
+	print(sum(listReapeatLen) / float(len(listReapeatLen)))
+	print(max(listReapeatLen))
+	print(len([elem for elem in listReapeatLen if elem > 2]))
 
 if __name__ == "__main__":
 	rtime = time()
