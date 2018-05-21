@@ -910,14 +910,16 @@ def check_miRNA_extension(cMiRNA, listCRefSeq):
 	return listExtLen
 
 def check_target_repeats(cMiRNA, listCRefSeq):
+	nMotifLen = 7
 	listRepeatLen = []
-	sRNASeq = cMiRNA.getSeq()[-7:]
+	sRNASeq = cMiRNA.getSeq()[-nMotifLen:]
+	print(sRNASeq)
 	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
+		sExSeq = cRefSeq.getExSeq()
 		nRepeat_Count = 0
-		if sRNASeq in sORFSeq:
-			for i in range(len(sORFSeq)):
-				sSub = sORFSeq[i:i+7]
+		if sRNASeq in sExSeq:
+			for i in range(len(sExSeq)):
+				sSub = sExSeq[i:i+nMotifLen]
 				if sRNASeq == sSub:
 					nRepeat_Count += 1
 			listRepeatLen.append(nRepeat_Count)
@@ -927,12 +929,13 @@ def check_target_repeats(cMiRNA, listCRefSeq):
 def check_target_repeats_A1(cMiRNA, listCRefSeq):
 	listRepeatLen = []
 	sRNASeq = cMiRNA.getSeq()[-6:] + "A"
+	print(sRNASeq)
 	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
+		sExSeq = cRefSeq.getExSeq()
 		nRepeat_Count = 0
-		if sRNASeq in sORFSeq:
-			for i in range(len(sORFSeq)):
-				sSub = sORFSeq[i:i+7]
+		if sRNASeq in sExSeq:
+			for i in range(len(sExSeq)):
+				sSub = sExSeq[i:i+7]
 				if sRNASeq == sSub:
 					nRepeat_Count += 1
 			listRepeatLen.append(nRepeat_Count)
@@ -940,7 +943,7 @@ def check_target_repeats_A1(cMiRNA, listCRefSeq):
 	return listRepeatLen 
 
 def main_5():
-	s_miRNA_Name = "miR-4742-3p"
+	s_miRNA_Name = "miR-9-5p"
 	sRegDataFile = "../data/Mission5_Dataset1.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
@@ -956,15 +959,15 @@ def main_5():
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
 	cMiRNA = dictCMiRNA[s_miRNA_Name]
 	listReapeatLen = check_target_repeats(cMiRNA, listCRefSeq)
-	print(sum(listReapeatLen) / float(len(listReapeatLen)))
-	print(max(listReapeatLen))
-	print(len([elem for elem in listReapeatLen if elem > 2]))
-
+	print("Average number of repeats: {}".format(sum(listReapeatLen) / float(len(listReapeatLen))))
+	print("Max number of repeats: {}".format(max(listReapeatLen)))
+	print("Number of target mRNAs with more than one target site: {}".format(len([elem for elem in listReapeatLen if elem > 1])))
+	
 	listReapeatLen = check_target_repeats_A1(cMiRNA, listCRefSeq)
 	print(sum(listReapeatLen) / float(len(listReapeatLen)))
 	print(max(listReapeatLen))
 	print(len([elem for elem in listReapeatLen if elem > 2]))
-
+	
 if __name__ == "__main__":
 	rtime = time()
 	main_5()
