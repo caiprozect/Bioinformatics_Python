@@ -987,12 +987,28 @@ def check_transfection_repeats(c_tf_miRNA, c_miRNA, listCRefSeq, sType, targetSi
 
 	return listTFRepeats, listClasses
 
+def gen_Down_NotMotif(listCRefSeq, c_tf_miRNA):
+	listDown_NotMotif = []
+
+	tf_motif = c_tf_miRNA.getSeq()[-7:]
+
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]] + ["AACCAAA"]
+
+	print("TF Motifs: {}".format(tf_motifs))
+
+	for cRefSeq in listCRefSeq:
+		sExSeq = cRefSeq.getExSeq()
+		if all([motif not in sExSeq for motif in tf_motifs]):
+			listDown_NotMotif.append(cRefSeq)
+
+	return listDown_NotMotif
+
 def main_5():
 	s_tf_miRNA_Name = "miR-9-5p"
-	s_miRNA_Name = "miR-9-5p"
-	sType = "A1"
-	targetSite = ["ORF"]
-	tfSite = ["ORF"]
+	#s_miRNA_Name = "miR-9-5p"
+	#sType = "A1"
+	#targetSite = ["ORF"]
+	#tfSite = ["ORF"]
 
 	sRegDataFile = "../data/Mission5_Dataset1.txt"
 
@@ -1007,24 +1023,12 @@ def main_5():
 	listCRefSeq = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
-	c_tfMiRNA = dictCMiRNA[s_tf_miRNA_Name]
-	c_miRNA = dictCMiRNA[s_miRNA_Name]
+	c_tf_miRNA = dictCMiRNA[s_tf_miRNA_Name]
+	#c_miRNA = dictCMiRNA[s_miRNA_Name]
 	
-	listTFRepeats, listClasses = check_transfection_repeats(c_tfMiRNA, c_miRNA, listCRefSeq, sType, targetSite, tfSite)
-
-	print("Average TF Repeats: {}".format(sum(listTFRepeats)/float(len(listTFRepeats))))
-	print("Max TF Repeats: {}".format(max(listTFRepeats)))
-	print("Num of Down mRNA with TF Repeats: {}".format(len([elem for elem in listTFRepeats if elem > 0])))
-	print("Num of Down mRNA without TF target: {}".format(len([elem for elem in listTFRepeats if elem == 0])))
-
-	indices = [i for i, j in enumerate(listTFRepeats) if j == max(listTFRepeats)]
-
-	check_file = "../data/Mission5_check.txt"
-	hCheck = open(check_file, "w")
-	for i in indices:
-		print(listClasses[i].getGeneSymbol(), file=hCheck)
-		print(listClasses[i].get3UTRSeq(), file=hCheck)
-	hCheck.close()
+	listDown_NotMotif = gen_Down_NotMotif(listCRefSeq, c_tf_miRNA)
+	print(len(listDown_NotMotif))
+	
 
 	
 if __name__ == "__main__":
