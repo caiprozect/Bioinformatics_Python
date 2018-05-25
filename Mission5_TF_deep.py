@@ -992,7 +992,7 @@ def gen_Down_NotMotif(listCRefSeq, c_tf_miRNA):
 
 	tf_motif = c_tf_miRNA.getSeq()[-7:]
 
-	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]] + ["AACCAAA"]
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]]
 
 	print("TF Motifs: {}".format(tf_motifs))
 
@@ -1003,14 +1003,31 @@ def gen_Down_NotMotif(listCRefSeq, c_tf_miRNA):
 
 	return listDown_NotMotif
 
+def gen_NotDown_Motif(listCRefSeq, c_tf_miRNA):
+	listNotDown_Motif = []
+
+	tf_motif = c_tf_miRNA.getSeq()[-7:]
+
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]]
+
+	print("TF Motifs: {}".format(tf_motifs))
+
+	for cRefSeq in listCRefSeq:
+		sExSeq = cRefSeq.getExSeq()
+		if any([motif in sExSeq for motif in tf_motifs]):
+			listNotDown_Motif.append(cRefSeq)
+
+	return listNotDown_Motif
+
+
 def main_5():
-	s_tf_miRNA_Name = "miR-9-5p"
+	s_tf_miRNA_Name = "miR-7-5p"
 	#s_miRNA_Name = "miR-9-5p"
 	#sType = "A1"
 	#targetSite = ["ORF"]
 	#tfSite = ["ORF"]
 
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
+	sRegDataFile = "../data/Mission5_Dataset3.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -1019,17 +1036,20 @@ def main_5():
 	listCMiRNA = fill_miRNA(sMiRNAFile)
 	dictCMiRNA = gen_dict_miRNA(listCMiRNA)
 	dictRegData = parseRegData(sRegDataFile)
-	dictRegData = {k: v for k, v in dictRegData.items() if v < -0.5}
-	listCRefSeq = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
+	dictRegData_Down = {k: v for k, v in dictRegData.items() if v < -0.5}
+	dictRegData_NotDown = {k: v for k, v in dictRegData.items() if v >= -0.5}
+	listCRefSeq_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
+	listCRefSeq_NotDown = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
 	c_tf_miRNA = dictCMiRNA[s_tf_miRNA_Name]
 	#c_miRNA = dictCMiRNA[s_miRNA_Name]
 	
-	listDown_NotMotif = gen_Down_NotMotif(listCRefSeq, c_tf_miRNA)
+	listDown_NotMotif = gen_Down_NotMotif(listCRefSeq_Down, c_tf_miRNA)
 	print(len(listDown_NotMotif))
 	
-
+	listNotDown_Motif = gen_NotDown_Motif(listCRefSeq_NotDown, c_tf_miRNA)
+	print(len(listNotDown_Motif))
 	
 if __name__ == "__main__":
 	rtime = time()

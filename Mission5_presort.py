@@ -5,7 +5,6 @@ import numpy as np
 from collections import defaultdict
 from functools import reduce
 import multiprocessing as mp 
-import pickle
 
 class miRNA:
 	def __init__(self):
@@ -47,7 +46,7 @@ def reverse_transcript(sSeq):
 	dictRT = {'A': 'T', 'C': 'G', 'G': 'C', 'U': 'A'}
 
 	sRTSeq = ""
-	for letter in sSeq[1:]:
+	for letter in sSeq[1:8]:
 		rtLetter = dictRT[letter]
 		sRTSeq = rtLetter + sRTSeq
 
@@ -60,7 +59,7 @@ def bonferroni_correction(listCMotif):
 	for cMotif in listCMotif:
 		fPValue = cMotif.getPValue()
 		fCorrPValue = min(1., fPValue * bonferroniCoeff)
-		cMotif.putPValue(fCorrPValue)
+		cMotif.putCorrection(fCorrPValue)
 		listCorrCMotif.append(cMotif)
 
 	return listCorrCMotif
@@ -556,6 +555,7 @@ class Motif:
 	def __init__(self):
 		self.sMotif = ""
 		self.fPValue = 0.
+		self.fCorrPValue = 0.
 		self.fRelRisk = 0.
 		self.mtxContingency = np.zeros((2, 2))
 		self.nSizeDownWMotif = 0
@@ -592,6 +592,8 @@ class Motif:
 		self.nSizeNDownWNMotif = self.mtxContingency[1, 1]
 	def put_miRNA_Info(self, sName, sType):
 		self.dict_miRNA_Info[sName] = sType
+	def putCorrection(self, fCorrPValue):
+		self.fCorrPValue = fCorrPValue
 
 	def getParsedTypeInfo(self):
 		sTypeInfo = ""
@@ -620,6 +622,8 @@ class Motif:
 		return self.mtxContingency
 	def get_miRNA_Info(self):
 		return self.dict_miRNA_Info
+	def getCorrPValue(self):
+		return self.fCorrPValue
 
 def parseRegData(sRegDataFile):
 	dictRegData = {}
@@ -886,150 +890,45 @@ def main_4(sRegDataFile, listCRefSeq, sRegion):
 	dfMotif.to_excel("Mission4_HJeon.xlsx", sheet_name="sheet1", index=False)
 	"""	
 
-def gen_dict_miRNA(listCMiRNA):
-	dictCMiRNA = {}
-
-	for cMiRNA in listCMiRNA:
-		sName = cMiRNA.getName()
-		dictCMiRNA[sName] = cMiRNA
-
-	return dictCMiRNA
-
-def check_miRNA_extension(cMiRNA, listCRefSeq):
-	listExtLen = []
-	sRNASeq = cMiRNA.getSeq()
-	for cRefSeq in listCRefSeq:
-		sExSeq = cRefSeq.getORFSeq()
-		cnt = 7
-		sMotif = sRNASeq[-cnt:]
-		if sMotif in sExSeq:
-			while sMotif in sExSeq:
-				cnt += 1
-				sMotif = sRNASeq[-cnt:]
-			listExtLen.append(cnt)
-	return listExtLen
-
-def check_target_repeats(cMiRNA, listCRefSeq):
-	nMotifLen = 7
-	listRepeatLen = []
-	sRNASeq = cMiRNA.getSeq()[-nMotifLen:]
-	print(sRNASeq)
-	for cRefSeq in listCRefSeq:
-		sExSeq = cRefSeq.getExSeq()
-		nRepeat_Count = 0
-		if sRNASeq in sExSeq:
-			for i in range(len(sExSeq)):
-				sSub = sExSeq[i:i+nMotifLen]
-				if sRNASeq == sSub:
-					nRepeat_Count += 1
-			listRepeatLen.append(nRepeat_Count)
-
-	return listRepeatLen 
-
-def check_target_repeats_A1(cMiRNA, listCRefSeq):
-	listRepeatLen = []
-	sRNASeq = cMiRNA.getSeq()[-6:] + "A"
-	print(sRNASeq)
-	for cRefSeq in listCRefSeq:
-		sExSeq = cRefSeq.getExSeq()
-		nRepeat_Count = 0
-		if sRNASeq in sExSeq:
-			for i in range(len(sExSeq)):
-				sSub = sExSeq[i:i+7]
-				if sRNASeq == sSub:
-					nRepeat_Count += 1
-			listRepeatLen.append(nRepeat_Count)
-
-	return listRepeatLen 
-
-def check_transfection_repeats(c_tf_miRNA, c_miRNA, listCRefSeq, sType, targetSite, tfSite):
-	listTFRepeats = []
-	listClasses = []
-
-	tf_motif = c_tf_miRNA.getSeq()[-7:]
-
-	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
-
-	#target_motif = "CAGAATT"
-	
-	target_motif = c_miRNA.getSeq()[-7:]
-
-	if sType == "A1":
-		target_motif = target_motif[1:] + "A"
-	
-	print("Target Moitf: {}".format(target_motif))
-	print("TF Motifs: {}".format(tf_motifs))
-
-	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
-		sExSeq = cRefSeq.getExSeq()
-		s3UTRSeq = cRefSeq.get3UTRSeq()
-		s5UTRSeq = cRefSeq.get5UTRSeq()
-
-		dictSeq = {"3UTR": s3UTRSeq, "ORF": sORFSeq, "5UTR": s5UTRSeq}
-
-		target_seq = reduce(lambda x,y: x+y, [dictSeq[site] for site in targetSite])
-		tf_seq = reduce(lambda x,y: x+y, [dictSeq[site] for site in tfSite])
-
-		if target_motif in target_seq:
-			cnt = 0
-			i = 0
-			while i < len(tf_seq):
-				s7mer = tf_seq[i: i+7]
-				if s7mer in tf_motifs:
-					cnt += 1
-					i += 7
-				else:
-					i += 1
-
-			if target_motif in tf_motifs and len(set(targetSite) & set(tfSite)) > 0:
-				cnt -= 1
-			listTFRepeats.append(cnt)
-			listClasses.append(cRefSeq)
-
-	return listTFRepeats, listClasses
-
 def main_5():
-	s_tf_miRNA_Name = "miR-9-5p"
-	s_miRNA_Name = "miR-9-5p"
-	sType = "A1"
-	targetSite = ["ORF"]
-	tfSite = ["3UTR"]
-
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
-
-	pickle_off = open("../data/Mission3.pickle", "rb")
-	listCRefSeq = pickle.load(pickle_off)
-	pickle_off.close()
+	listCRefSeq = main_3()
 	sMiRNAFile = "../data/mature.fa"
 	listCMiRNA = fill_miRNA(sMiRNAFile)
-	dictCMiRNA = gen_dict_miRNA(listCMiRNA)
-	dictRegData = parseRegData(sRegDataFile)
-	dictRegData = {k: v for k, v in dictRegData.items() if v < -0.5}
-	listCRefSeq = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
-	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
-	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
-	c_tfMiRNA = dictCMiRNA[s_tf_miRNA_Name]
-	c_miRNA = dictCMiRNA[s_miRNA_Name]
-	
-	listTFRepeats, listClasses = check_transfection_repeats(c_tfMiRNA, c_miRNA, listCRefSeq, sType, targetSite, tfSite)
+	sRegDataHeader = "../data/Mission5_Dataset"
+	regions = ["3UTR", "ORF", "5UTR"]
+	for i in range(1,4):
+		for sRegion in regions:
+			sRegDataFile = sRegDataHeader + str(i) + ".txt"
+			listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
+			listCMotif = bonferroni_correction(listCMotif)
+			listCMotif = fill_target_info(listCMotif, listCMiRNA)
+			
+			listSortedCMotif = significantCMotifs(listCMotif)
+			assert(len(listCMotif) == len(listSortedCMotif))
+			listCMotif = listSortedCMotif
 
-	print("Average TF Repeats: {}".format(sum(listTFRepeats)/float(len(listTFRepeats))))
-	print("Max TF Repeats: {}".format(max(listTFRepeats)))
-	print("Num of Down mRNA with TF Repeats: {}".format(len([elem for elem in listTFRepeats if elem > 0])))
-	print("Num of Down mRNA without TF target: {}".format(len([elem for elem in listTFRepeats if elem == 0])))
-	print("Ration of Down mRNA with TF target: {}".format(len([elem for elem in listTFRepeats if elem > 0])/float(len(listTFRepeats))))
+			#Write to excel
+			sExcelFile = sRegDataHeader + str(i) + "_presort_" + sRegion + ".xlsx"
+			listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
+			listPValue = [cMotif.getPValue() for cMotif in listCMotif]
+			listCorrPValue = [cMotif.getCorrPValue() for cMotif in listCMotif]
+			listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
+			listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
+			listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
+			listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
+			listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
-	indices = [i for i, j in enumerate(listTFRepeats) if j == max(listTFRepeats)]
+			listTargetInfo = [cMotif.getParsedTypeInfo() for cMotif in listCMotif]
 
-	check_file = "../data/Mission5_check.txt"
-	hCheck = open(check_file, "w")
-	for i in indices:
-		print(listClasses[i].getGeneSymbol(), file=hCheck)
-		print(listClasses[i].get3UTRSeq(), file=hCheck)
-	hCheck.close()
+			dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
+			"Corr_P_Value": listCorrPValue,
+			"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
+			"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
+			"Relative_Risk": listRelRisk,
+			"Match with known miRNAs": listTargetInfo})
 
-	
+			dfMotif.to_excel(sExcelFile, sheet_name="sheet1", index=False)
+
 if __name__ == "__main__":
 	rtime = time()
 	main_5()
