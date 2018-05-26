@@ -953,7 +953,9 @@ def check_correlation_absence(listMotifs, sMotif_ORF, listCRefSeq):
 	return fCorr
 
 def main_5():
-	s_miRNA_Name = "miR-9-5p"
+	tf_miRNA_Name = "miR-124-3p"
+	target_miRNA_Name = "miR-124-3p"
+	sType = "m8"
 	sRegDataFile = "../data/Mission5_Dataset2.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
@@ -969,15 +971,29 @@ def main_5():
 	listCRefSeq_Not_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData_Not_Down]
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
-	cMiRNA = dictCMiRNA[s_miRNA_Name]
-	listMotifs = ["CCAAAG"]
-	sMotif_ORF = "CCAAAGA"
-	fCorrDown = check_correlation(listMotifs, sMotif_ORF, listCRefSeq_Down)
+	c_tf_miRNA = dictCMiRNA[tf_miRNA_Name]
+	c_miRNA = dictCMiRNA[target_miRNA_Name]
+
+	tf_motif = c_tf_miRNA.getSeq()[-7:]
+
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
+
+	#target_motif = "CAGAATT"
+	
+	target_motif = c_miRNA.getSeq()[-7:]
+
+	if sType == "A1":
+		target_motif = target_motif[1:] + "A"
+	
+	print("Target Moitf: {}".format(target_motif))
+	print("TF Motifs: {}".format(tf_motifs))
+
+	fCorrDown = check_correlation(tf_motifs, target_motif, listCRefSeq_Down)
 	print("Down: {}".format(fCorrDown))
-	fCorrNotDown = check_correlation_absence(listMotifs, sMotif_ORF, listCRefSeq_Not_Down)
+	fCorrNotDown = check_correlation_absence(tf_motifs, target_motif, listCRefSeq_Not_Down)
 	print("Not Down: {}".format(fCorrNotDown))
 
-	print(fCorrDown / fCorrNotDown) 
+	#print(fCorrDown / fCorrNotDown) 
 
 if __name__ == "__main__":
 	rtime = time()

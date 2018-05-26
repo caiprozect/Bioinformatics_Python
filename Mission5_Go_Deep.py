@@ -1007,10 +1007,10 @@ def targetContingency(c_tf_miRNA, c_miRNA, listCRefSeq, sType):
 	return target_mtx
 
 def main_5():
-	s_tf_miRNA_Name = "miR-9-5p"
-	s_miRNA_Name = "miR-3165"
-	sType = "A1"
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
+	s_tf_miRNA_Name = "miR-124-3p"
+	s_miRNA_Name = "miR-124-3p"
+	sType = "m8"
+	sRegDataFile = "../data/Mission5_Dataset2.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -1028,8 +1028,8 @@ def main_5():
 
 	targetMtx = targetContingency(c_tfMiRNA, c_miRNA, listCRefSeq, sType)
 	OddsRatio, PValue = OddsRatio, PValue = stats.fisher_exact(targetMtx)
-	print(PValue)
-	print(OddsRatio)
+	print("P Value: {}".format(PValue))
+	print("Odds Ratio: {}".format(OddsRatio))
 	n1 = targetMtx[0,0]
 	n2 = targetMtx[0,1]
 	n3 = targetMtx[1,0]
@@ -1039,7 +1039,7 @@ def main_5():
 	B = n3 / float(n3 + n4)
 
 	relRisk = A / B
-	print(relRisk)
+	print("Relative Risk: {}".format(relRisk))
 	
 if __name__ == "__main__":
 	rtime = time()

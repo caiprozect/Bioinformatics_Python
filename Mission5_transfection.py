@@ -47,7 +47,7 @@ def reverse_transcript(sSeq):
 	dictRT = {'A': 'T', 'C': 'G', 'G': 'C', 'U': 'A'}
 
 	sRTSeq = ""
-	for letter in sSeq[1:]:
+	for letter in sSeq:
 		rtLetter = dictRT[letter]
 		sRTSeq = rtLetter + sRTSeq
 
@@ -946,13 +946,13 @@ def check_transfection_repeats(c_tf_miRNA, c_miRNA, listCRefSeq, sType, targetSi
 	listTFRepeats = []
 	listClasses = []
 
-	tf_motif = c_tf_miRNA.getSeq()[-7:]
+	tf_motif = c_tf_miRNA.getSeq()[-8:-1]
 
 	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
 
 	#target_motif = "CAGAATT"
 	
-	target_motif = c_miRNA.getSeq()[-7:]
+	target_motif = c_miRNA.getSeq()[-8:-1]
 
 	if sType == "A1":
 		target_motif = target_motif[1:] + "A"
@@ -988,6 +988,37 @@ def check_transfection_repeats(c_tf_miRNA, c_miRNA, listCRefSeq, sType, targetSi
 			listClasses.append(cRefSeq)
 
 	return listTFRepeats, listClasses
+
+def check_ratio_ORF_repeats(c_tf_miRNA, listCRefSeq):
+	tf_motif = c_tf_miRNA.getSeq()[-8:]
+
+	tf_3UTR_motifs = [tf_motif[:-1], tf_motif[1:-1] + "A"]
+
+	tf_motifs = [tf_motif]
+
+
+	print("TF 3UTR Motifs: {}".format(tf_3UTR_motifs))
+	print("TF Motifs: {}".format(tf_motifs))
+
+	down_but_no_3UTR = 0
+	ORF_repeats = 0
+
+	for cRefSeq in listCRefSeq:
+		s3UTRSeq = cRefSeq.get3UTRSeq()
+		sORFSeq = cRefSeq.getORFSeq()
+
+		if all([motif not in s3UTRSeq for motif in tf_3UTR_motifs]):
+			down_but_no_3UTR += 1
+			cnt = 0
+			for i in range(len(sORFSeq)):
+				motif = sORFSeq[i:i+8]
+				if motif in tf_motifs:
+					cnt += 1
+			if cnt > 1:
+				ORF_repeats += 1
+
+	return down_but_no_3UTR, ORF_repeats
+
 
 def main_5():
 	s_tf_miRNA_Name = "miR-9-5p"
@@ -1028,6 +1059,12 @@ def main_5():
 		print(listClasses[i].getGeneSymbol(), file=hCheck)
 		print(listClasses[i].get3UTRSeq(), file=hCheck)
 	hCheck.close()
+
+	down_but_no_3UTR, ORF_repeats = check_ratio_ORF_repeats(c_tfMiRNA, listCRefSeq)
+
+	print("Down but no 3UTR motif: {}".format(down_but_no_3UTR))
+	print("ORF repeats: {}".format(ORF_repeats))
+	print("Ratio: {}".format(ORF_repeats / float(down_but_no_3UTR)))
 
 	
 if __name__ == "__main__":

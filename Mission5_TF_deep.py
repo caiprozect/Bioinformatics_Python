@@ -992,7 +992,7 @@ def gen_Down_NotMotif(listCRefSeq, c_tf_miRNA):
 
 	tf_motif = c_tf_miRNA.getSeq()[-7:]
 
-	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]]
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
 
 	print("TF Motifs: {}".format(tf_motifs))
 
@@ -1008,7 +1008,7 @@ def gen_NotDown_Motif(listCRefSeq, c_tf_miRNA):
 
 	tf_motif = c_tf_miRNA.getSeq()[-7:]
 
-	tf_motifs = [tf_motif, tf_motif[1:] + "A"] + [c_tf_miRNA.getSeq()[-6:]]
+	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
 
 	print("TF Motifs: {}".format(tf_motifs))
 
@@ -1021,13 +1021,13 @@ def gen_NotDown_Motif(listCRefSeq, c_tf_miRNA):
 
 
 def main_5():
-	s_tf_miRNA_Name = "miR-7-5p"
+	s_tf_miRNA_Name = "miR-9-5p"
 	#s_miRNA_Name = "miR-9-5p"
 	#sType = "A1"
 	#targetSite = ["ORF"]
 	#tfSite = ["ORF"]
 
-	sRegDataFile = "../data/Mission5_Dataset3.txt"
+	sRegDataFile = "../data/Mission5_Dataset1.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -1038,8 +1038,8 @@ def main_5():
 	dictRegData = parseRegData(sRegDataFile)
 	dictRegData_Down = {k: v for k, v in dictRegData.items() if v < -0.5}
 	dictRegData_NotDown = {k: v for k, v in dictRegData.items() if v >= -0.5}
-	listCRefSeq_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
-	listCRefSeq_NotDown = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData]
+	listCRefSeq_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData_Down]
+	listCRefSeq_NotDown = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData_NotDown]
 	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
 	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
 	c_tf_miRNA = dictCMiRNA[s_tf_miRNA_Name]
@@ -1047,9 +1047,11 @@ def main_5():
 	
 	listDown_NotMotif = gen_Down_NotMotif(listCRefSeq_Down, c_tf_miRNA)
 	print(len(listDown_NotMotif))
+	print(len(listDown_NotMotif) / float(len(listCRefSeq_Down)))
 	
 	listNotDown_Motif = gen_NotDown_Motif(listCRefSeq_NotDown, c_tf_miRNA)
 	print(len(listNotDown_Motif))
+	print(len(listNotDown_Motif) / float(len(listCRefSeq_NotDown)))
 	
 if __name__ == "__main__":
 	rtime = time()
