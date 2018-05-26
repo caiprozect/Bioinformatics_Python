@@ -1,11 +1,13 @@
 from time import time
 from scipy import stats
 from pandas import DataFrame
+import pandas as pd
 import numpy as np
 from collections import defaultdict
 from functools import reduce
 import multiprocessing as mp 
 import pickle
+import matplotlib.pyplot as plt
 
 class miRNA:
 	def __init__(self):
@@ -556,6 +558,7 @@ class Motif:
 	def __init__(self):
 		self.sMotif = ""
 		self.fPValue = 0.
+		self.fCorrPValue = 0.
 		self.fRelRisk = 0.
 		self.mtxContingency = np.zeros((2, 2))
 		self.nSizeDownWMotif = 0
@@ -592,6 +595,8 @@ class Motif:
 		self.nSizeNDownWNMotif = self.mtxContingency[1, 1]
 	def put_miRNA_Info(self, sName, sType):
 		self.dict_miRNA_Info[sName] = sType
+	def putCorrection(self, fCorrPValue):
+		self.fCorrPValue = fCorrPValue
 
 	def getParsedTypeInfo(self):
 		sTypeInfo = ""
@@ -620,6 +625,8 @@ class Motif:
 		return self.mtxContingency
 	def get_miRNA_Info(self):
 		return self.dict_miRNA_Info
+	def getCorrPValue(self):
+		return self.fCorrPValue
 
 def parseRegData(sRegDataFile):
 	dictRegData = {}
@@ -954,9 +961,10 @@ def check_correlation_absence(listMotifs, sMotif_ORF, listCRefSeq):
 
 def main_5():
 	tf_miRNA_Name = "miR-9-5p"
+	datasetNum = 1
 	target_miRNA_Name = "miR-607"
 	sType = "A1"
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
+	sRegDataFile = "../data/Mission5_Dataset" + str(datasetNum) + ".txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -994,6 +1002,26 @@ def main_5():
 	print("Not Down: {}".format(fCorrNotDown))
 
 	#print(fCorrDown / fCorrNotDown) 
+
+	file_name = "../data/Mission5_Dataset" + str(datasetNum) + "_presort_ORF.xlsx"
+	df = pd.read_excel(file_name, sheetname="sheet1")
+	ORF_motifs = df["Motif"]
+	ORF_motifs = list(ORF_motifs)[0:100]
+
+	listConditional = []
+	listDualConditional = []
+
+	for idx, sMotif in enumerate(ORF_motifs):
+		print("Progress: {} / {}".format(idx, len(ORF_motifs)))
+		conditional = check_correlation(tf_motifs, sMotif, listCRefSeq_Down)
+		dual_conditional = check_correlation_absence(tf_motifs, sMotif, listCRefSeq_Not_Down)
+		listConditional.append(conditional)
+		listDualConditional.append(dual_conditional)
+
+	down, = plt.plot(listConditional, label = "3'UTR | Down and ORF")
+	not_down, = plt.plot(listDualConditional, label = "Not 3'UTR | Not Down and Not ORF")
+	plt.legend(handles=[down, not_down])
+	plt.show()
 
 if __name__ == "__main__":
 	rtime = time()

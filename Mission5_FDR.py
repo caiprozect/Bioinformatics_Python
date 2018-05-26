@@ -5,6 +5,7 @@ import numpy as np
 from collections import defaultdict
 from functools import reduce
 import multiprocessing as mp 
+import pickle
 
 class miRNA:
 	def __init__(self):
@@ -894,7 +895,10 @@ def main_4(sRegDataFile, listCRefSeq, sRegion):
 	"""	
 
 def main_5():
-	listCRefSeq = main_3()
+	#listCRefSeq = main_3()
+	pickle_off = open("../data/Mission3.pickle", "rb")
+	listCRefSeq = pickle.load(pickle_off)
+	pickle_off.close()
 	sMiRNAFile = "../data/mature.fa"
 	listCMiRNA = fill_miRNA(sMiRNAFile)
 	sRegDataHeader = "../data/Mission5_Dataset"

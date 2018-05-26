@@ -1019,6 +1019,21 @@ def gen_NotDown_Motif(listCRefSeq, c_tf_miRNA):
 
 	return listNotDown_Motif
 
+def gen_dict_motif_freq(listCRefSeq):
+	dict_motif_freq = defaultdict(lambda: 0)
+	nMotifLen = 7
+
+	for cRefSeq in listCRefSeq:
+		sORFSeq = cRefSeq.getORFSeq()
+		setSeen = set([])
+		for i in range(len(sORFSeq) - nMotifLen + 1):
+			sMotif = sORFSeq[i:i+nMotifLen]
+			if sMotif not in setSeen:	
+				setSeen.add(sMotif)
+				dict_motif_freq[sMotif] += 1
+
+	return dict_motif_freq
+
 
 def main_5():
 	s_tf_miRNA_Name = "miR-9-5p"
@@ -1046,10 +1061,16 @@ def main_5():
 	#c_miRNA = dictCMiRNA[s_miRNA_Name]
 	
 	listDown_NotMotif = gen_Down_NotMotif(listCRefSeq_Down, c_tf_miRNA)
+	dict_motif_freq_down = gen_dict_motif_freq(listDown_NotMotif)
+	list_sig_freq_down = list(dict_motif_freq_down.keys())
+	list_sig_freq_down.sort(key = (lambda x: dict_motif_freq_down[x]))
+	print(list_sig_freq_down[-10:])
+	print([dict_motif_freq_down[motif] for motif in list_sig_freq_down[-10:]])
 	print(len(listDown_NotMotif))
 	print(len(listDown_NotMotif) / float(len(listCRefSeq_Down)))
 	
 	listNotDown_Motif = gen_NotDown_Motif(listCRefSeq_NotDown, c_tf_miRNA)
+	dict_motif_freq_notDown = gen_dict_motif_freq(listNotDown_Motif)
 	print(len(listNotDown_Motif))
 	print(len(listNotDown_Motif) / float(len(listCRefSeq_NotDown)))
 	

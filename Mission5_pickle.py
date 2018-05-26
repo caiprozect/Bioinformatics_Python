@@ -47,7 +47,7 @@ def reverse_transcript(sSeq):
 	dictRT = {'A': 'T', 'C': 'G', 'G': 'C', 'U': 'A'}
 
 	sRTSeq = ""
-	for letter in sSeq[1:]:
+	for letter in sSeq[1:8]:
 		rtLetter = dictRT[letter]
 		sRTSeq = rtLetter + sRTSeq
 
@@ -60,7 +60,7 @@ def bonferroni_correction(listCMotif):
 	for cMotif in listCMotif:
 		fPValue = cMotif.getPValue()
 		fCorrPValue = min(1., fPValue * bonferroniCoeff)
-		cMotif.putPValue(fCorrPValue)
+		cMotif.putCorrection(fCorrPValue)
 		listCorrCMotif.append(cMotif)
 
 	return listCorrCMotif
@@ -556,6 +556,7 @@ class Motif:
 	def __init__(self):
 		self.sMotif = ""
 		self.fPValue = 0.
+		self.fCorrPValue = 0.
 		self.fRelRisk = 0.
 		self.mtxContingency = np.zeros((2, 2))
 		self.nSizeDownWMotif = 0
@@ -592,6 +593,8 @@ class Motif:
 		self.nSizeNDownWNMotif = self.mtxContingency[1, 1]
 	def put_miRNA_Info(self, sName, sType):
 		self.dict_miRNA_Info[sName] = sType
+	def putCorrection(self, fCorrPValue):
+		self.fCorrPValue = fCorrPValue
 
 	def getParsedTypeInfo(self):
 		sTypeInfo = ""
@@ -620,6 +623,8 @@ class Motif:
 		return self.mtxContingency
 	def get_miRNA_Info(self):
 		return self.dict_miRNA_Info
+	def getCorrPValue(self):
+		return self.fCorrPValue
 
 def parseRegData(sRegDataFile):
 	dictRegData = {}
@@ -886,115 +891,55 @@ def main_4(sRegDataFile, listCRefSeq, sRegion):
 	dfMotif.to_excel("Mission4_HJeon.xlsx", sheet_name="sheet1", index=False)
 	"""	
 
-def gen_dict_miRNA(listCMiRNA):
-	dictCMiRNA = {}
-
-	for cMiRNA in listCMiRNA:
-		sName = cMiRNA.getName()
-		dictCMiRNA[sName] = cMiRNA
-
-	return dictCMiRNA
-
-def check_miRNA_extension(cMiRNA, listCRefSeq):
-	listExtLen = []
-	sRNASeq = cMiRNA.getSeq()
-	for cRefSeq in listCRefSeq:
-		sExSeq = cRefSeq.getORFSeq()
-		cnt = 7
-		sMotif = sRNASeq[-cnt:]
-		if sMotif in sExSeq:
-			while sMotif in sExSeq:
-				cnt += 1
-				sMotif = sRNASeq[-cnt:]
-			listExtLen.append(cnt)
-	return listExtLen
-
-def check_target_repeats(cMiRNA, listCRefSeq):
-	listRepeatLen = []
-	sRNASeq = cMiRNA.getSeq()[1:8]
-	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
-		nRepeat_Count = 0
-		if sRNASeq in sORFSeq:
-			for i in range(len(sORFSeq)):
-				sSub = sORFSeq[i:i+7]
-				if sRNASeq == sSub:
-					nRepeat_Count += 1
-			listRepeatLen.append(nRepeat_Count)
-
-	return listRepeatLen 
-
-def check_correlation(listMotifs, sMotif_ORF, listCRefSeq):
-	nORFcnt = 0
-	n3UTRcnt = 0
-	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
-		if sMotif_ORF in sORFSeq:
-			nORFcnt += 1
-			s3UTRSeq = cRefSeq.get3UTRSeq()
-			if any([motif in s3UTRSeq for motif in listMotifs]):
-				n3UTRcnt += 1
-	fCorr = float(n3UTRcnt) / nORFcnt
-
-	return fCorr
-
-def check_correlation_absence(listMotifs, sMotif_ORF, listCRefSeq):
-	nORFcnt = 0
-	n3UTRcnt = 0
-	for cRefSeq in listCRefSeq:
-		sORFSeq = cRefSeq.getORFSeq()
-		if sMotif_ORF not in sORFSeq:
-			nORFcnt += 1
-			s3UTRSeq = cRefSeq.get3UTRSeq()
-			if all([motif not in s3UTRSeq for motif in listMotifs]):
-				n3UTRcnt += 1
-	fCorr = float(n3UTRcnt) / nORFcnt
-
-	return fCorr
-
 def main_5():
-	tf_miRNA_Name = "miR-9-5p"
-	target_miRNA_Name = "miR-607"
-	sType = "A1"
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
-
+	#listCRefSeq = main_3()
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
 	pickle_off.close()
 	sMiRNAFile = "../data/mature.fa"
 	listCMiRNA = fill_miRNA(sMiRNAFile)
-	dictCMiRNA = gen_dict_miRNA(listCMiRNA)
-	dictRegData = parseRegData(sRegDataFile)
-	dictRegData_Down = {k: v for k, v in dictRegData.items() if v < -0.5}
-	dictRegData_Not_Down = {k: v for k, v in dictRegData.items() if v >= -0.5}
-	listCRefSeq_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData_Down]
-	listCRefSeq_Not_Down = [cRefSeq for cRefSeq in listCRefSeq if cRefSeq.getGeneSymbol().upper() in dictRegData_Not_Down]
-	#listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
-	#cMotif = [cMotif for cMotif in listCMotif if cMotif.getMotif() == sMotif][0]
-	c_tf_miRNA = dictCMiRNA[tf_miRNA_Name]
-	c_miRNA = dictCMiRNA[target_miRNA_Name]
+	sRegDataHeader = "../data/Mission5_Dataset"
+	regions = ["3UTR", "ORF", "5UTR"]
+	for i in range(1,4):
+		for sRegion in regions:
+			sRegDataFile = sRegDataHeader + str(i) + ".txt"
+			listCMotif = main_4(sRegDataFile, listCRefSeq, sRegion)
+			listCMotif = bonferroni_correction(listCMotif)
+			listCMotif = fill_target_info(listCMotif, listCMiRNA)
+			
+			listSortedCMotif = significantCMotifs(listCMotif)
+			assert(len(listCMotif) == len(listSortedCMotif))
+			listCMotif = listSortedCMotif
 
-	tf_motif = c_tf_miRNA.getSeq()[-7:]
+			pickle_file = sRegDataHeader + str(i) + "_" + sRegion + ".pickle"
 
-	tf_motifs = [tf_motif, tf_motif[1:] + "A"]
+			pickling_on = open(pickle_file, "wb")
+			pickle.dump([cMotif.getMotif() for cMotif in listCMotif], pickling_on)
+			pickling_on.close()
 
-	#target_motif = "CAGAATT"
-	
-	target_motif = c_miRNA.getSeq()[-7:]
+"""
+			#Write to excel
+			sExcelFile = sRegDataHeader + str(i) + "_presort_" + sRegion + ".xlsx"
+			listMotifSeq = [cMotif.getMotif() for cMotif in listCMotif]
+			listPValue = [cMotif.getPValue() for cMotif in listCMotif]
+			listCorrPValue = [cMotif.getCorrPValue() for cMotif in listCMotif]
+			listMotif_Down = [cMotif.getSizeDownWMotif() for cMotif in listCMotif]
+			listNotMotif_Down = [cMotif.getSizeDownWNMotif() for cMotif in listCMotif]
+			listMotif_NotDown = [cMotif.getSizeNDownWMotif() for cMotif in listCMotif]
+			listNotMotif_NotDown = [cMotif.getSizeNDownWNMotif() for cMotif in listCMotif]
+			listRelRisk = [cMotif.getRelRisk() for cMotif in listCMotif]
 
-	if sType == "A1":
-		target_motif = target_motif[1:] + "A"
-	
-	print("Target Moitf: {}".format(target_motif))
-	print("TF Motifs: {}".format(tf_motifs))
+			listTargetInfo = [cMotif.getParsedTypeInfo() for cMotif in listCMotif]
 
-	fCorrDown = check_correlation(tf_motifs, target_motif, listCRefSeq_Down)
-	print("Down: {}".format(fCorrDown))
-	fCorrNotDown = check_correlation_absence(tf_motifs, target_motif, listCRefSeq_Not_Down)
-	print("Not Down: {}".format(fCorrNotDown))
+			dfMotif = DataFrame({"Motif": listMotifSeq, "P_Value": listPValue,
+			"Corr_P_Value": listCorrPValue,
+			"Motif_Down": listMotif_Down, "NotMotif_Down": listNotMotif_Down,
+			"Motif_NotDown": listMotif_NotDown, "NotMotif_NotDown": listNotMotif_NotDown,
+			"Relative_Risk": listRelRisk,
+			"Match with known miRNAs": listTargetInfo})
 
-	#print(fCorrDown / fCorrNotDown) 
-
+			dfMotif.to_excel(sExcelFile, sheet_name="sheet1", index=False)
+"""
 if __name__ == "__main__":
 	rtime = time()
 	main_5()

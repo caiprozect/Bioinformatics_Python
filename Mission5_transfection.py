@@ -1021,13 +1021,13 @@ def check_ratio_ORF_repeats(c_tf_miRNA, listCRefSeq):
 
 
 def main_5():
-	s_tf_miRNA_Name = "miR-9-5p"
-	s_miRNA_Name = "miR-9-5p"
+	s_tf_miRNA_Name = "miR-7-5p"
+	s_miRNA_Name = "miR-1277-5p"
 	sType = "A1"
 	targetSite = ["ORF"]
 	tfSite = ["3UTR"]
 
-	sRegDataFile = "../data/Mission5_Dataset1.txt"
+	sRegDataFile = "../data/Mission5_Dataset3.txt"
 
 	pickle_off = open("../data/Mission3.pickle", "rb")
 	listCRefSeq = pickle.load(pickle_off)
@@ -1049,7 +1049,7 @@ def main_5():
 	print("Max TF Repeats: {}".format(max(listTFRepeats)))
 	print("Num of Down mRNA with TF Repeats: {}".format(len([elem for elem in listTFRepeats if elem > 0])))
 	print("Num of Down mRNA without TF target: {}".format(len([elem for elem in listTFRepeats if elem == 0])))
-	print("Ration of Down mRNA with TF target: {}".format(len([elem for elem in listTFRepeats if elem > 0])/float(len(listTFRepeats))))
+	print("Ratio of Down mRNA with TF target: {}".format(len([elem for elem in listTFRepeats if elem > 0])/float(len(listTFRepeats))))
 
 	indices = [i for i, j in enumerate(listTFRepeats) if j == max(listTFRepeats)]
 
